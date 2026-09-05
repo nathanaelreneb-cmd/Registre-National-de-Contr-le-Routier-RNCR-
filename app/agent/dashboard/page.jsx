@@ -49,6 +49,7 @@ export default function TableauDeBord() {
       <div className="content">
         <Link href="/agent/nouveau" className="btn">Enregistrer un engin</Link>
         <Link href="/agent/scanner" className="btn secondaire">Scanner un QR code</Link>
+        <Link href="/agent/nouvel-agent" className="btn secondaire">Ajouter un agent</Link>
 
         <div className="divider" />
 
@@ -76,4 +77,4 @@ export default function TableauDeBord() {
       </div>
     </div>
   );
-}
+      }
