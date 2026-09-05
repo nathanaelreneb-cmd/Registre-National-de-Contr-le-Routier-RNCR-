@@ -101,8 +101,11 @@ export default function ScannerAgent() {
           style={{ display: 'none' }}
         />
 
-        <div id="lecteur-fichier-cache" style={{ display: 'none' }} />
+        <div
+          id="lecteur-fichier-cache"
+          style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}
+        />
       </div>
     </div>
   );
-  }
+        }
