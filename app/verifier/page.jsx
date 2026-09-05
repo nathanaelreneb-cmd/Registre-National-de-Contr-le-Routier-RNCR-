@@ -33,7 +33,9 @@ export default function SaisirCode() {
               });
             },
             () => {}
-          ).catch(() => {
+          ).then(() => {
+            setErreur('');
+          }).catch(() => {
             setErreur("Autorisation caméra refusée. Réautorisez la caméra dans les paramètres du site, ou utilisez « Choisir une photo » ci-dessous.");
           });
         })
@@ -129,4 +131,4 @@ export default function SaisirCode() {
       </div>
     </div>
   );
-}
+        }
