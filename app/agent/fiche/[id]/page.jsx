@@ -76,7 +76,7 @@ export default function FicheEngin({ params }) {
       </div>
       <div className="content">
         <div style={{ textAlign: 'center', padding: '20px 0' }}>
-          <QRCodeCanvas id="qr-canvas-fiche" value={lienVerification} size={220} />
+          <QRCodeCanvas id="qr-canvas-fiche" value={lienVerification} size={220} includeMargin={true} />
           <p style={{ marginTop: 12, fontWeight: 700, letterSpacing: '0.05em' }}>{engin.qr_code}</p>
         </div>
 
@@ -111,4 +111,4 @@ export default function FicheEngin({ params }) {
       </div>
     </div>
   );
-}
+      }
