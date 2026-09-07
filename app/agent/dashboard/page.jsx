@@ -61,6 +61,7 @@ export default function TableauDeBord() {
         <Link href="/agent/nouveau" className="btn">Enregistrer un engin</Link>
         <Link href="/agent/scanner" className="btn secondaire">Scanner un QR code</Link>
         <Link href="/agent/suspect" className="btn secondaire">Signaler une moto suspecte</Link>
+        <Link href="/agent/declarer-vol" className="btn secondaire">Déclarer un vol</Link>
         <Link href="/agent/signalements" className="btn secondaire">Signalements</Link>
         <Link href="/agent/historique" className="btn secondaire">Historique de mes scans</Link>
         {role === 'responsable' && (

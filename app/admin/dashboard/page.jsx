@@ -7,7 +7,7 @@ import { supabase } from '../../../lib/supabaseClient';
 
 export default function DashboardAdmin() {
   const router = useRouter();
-  const [autorise, setAutorise] = useState(null);
+  const [autorise, setAutorise] = useState(null); // null = vérification en cours
   const [stats, setStats] = useState(null);
   const [chargement, setChargement] = useState(true);
 
@@ -127,6 +127,7 @@ export default function DashboardAdmin() {
         <div className="divider" />
 
         <Link href="/admin/registre" className="btn secondaire">Registre central des engins</Link>
+        <Link href="/admin/vols" className="btn secondaire" style={{ marginTop: 10, display: 'block' }}>Gestion des vols & alertes</Link>
       </div>
     </div>
   );
