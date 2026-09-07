@@ -24,16 +24,18 @@ export async function POST(request) {
     return Response.json({ erreur: 'Session invalide. Reconnectez-vous.' }, { status: 401 });
   }
 
-  // Seul un responsable de poste peut ajouter un agent
+  // Seul un responsable de poste, un responsable régional ou un admin peut ajouter un agent
   const { data: agentDemandeur, error: erreurAgentDemandeur } = await supabaseAdmin
     .from('agents')
-    .select('role')
+    .select('role, poste_id')
     .eq('user_id', user.id)
     .single();
 
-  if (erreurAgentDemandeur || !agentDemandeur || agentDemandeur.role !== 'responsable') {
+  const rolesAutorises = ['responsable', 'responsable_regional', 'admin'];
+
+  if (erreurAgentDemandeur || !agentDemandeur || !rolesAutorises.includes(agentDemandeur.role)) {
     return Response.json(
-      { erreur: "Seul un responsable de poste peut ajouter un agent." },
+      { erreur: "Vous n'avez pas les droits pour ajouter un agent." },
       { status: 403 }
     );
   }
@@ -46,6 +48,9 @@ export async function POST(request) {
   }
 
   const roleFinal = role === 'responsable' ? 'responsable' : 'agent';
+
+  // Le nouvel agent hérite automatiquement du poste de celui qui le crée
+  const posteFinal = agentDemandeur.role === 'responsable' ? agentDemandeur.poste_id : null;
 
   const { data: nouvelUtilisateur, error: erreurCreation } = await supabaseAdmin.auth.admin.createUser({
     email,
@@ -62,6 +67,7 @@ export async function POST(request) {
     nom,
     telephone: telephone || null,
     role: roleFinal,
+    poste_id: posteFinal,
   });
 
   if (erreurAgent) {

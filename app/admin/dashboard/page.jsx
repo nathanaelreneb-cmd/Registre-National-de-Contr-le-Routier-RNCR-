@@ -128,6 +128,7 @@ export default function DashboardAdmin() {
 
         <Link href="/admin/registre" className="btn secondaire">Registre central des engins</Link>
         <Link href="/admin/vols" className="btn secondaire" style={{ marginTop: 10, display: 'block' }}>Gestion des vols & alertes</Link>
+        <Link href="/admin/hierarchie" className="btn secondaire" style={{ marginTop: 10, display: 'block' }}>Hiérarchie & comptes</Link>
       </div>
     </div>
   );
