@@ -26,9 +26,7 @@ export default function ResultatVerification({ params }) {
   useEffect(() => {
     async function chercher() {
       const { data } = await supabase
-        .from('engins')
-        .select('id, type_engin, marque, modele, plaque, statut, qr_code')
-        .eq('qr_code', qr)
+        .rpc('verifier_engin_public', { code: qr })
         .maybeSingle();
 
       setEngin(data || null);

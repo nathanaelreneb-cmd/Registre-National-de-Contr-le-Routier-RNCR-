@@ -15,6 +15,7 @@ export default function GestionVols() {
   const router = useRouter();
   const [autorise, setAutorise] = useState(null);
   const [alertes, setAlertes] = useState([]);
+  const [sos, setSos] = useState([]);
   const [chargement, setChargement] = useState(true);
 
   useEffect(() => {
@@ -46,7 +47,20 @@ export default function GestionVols() {
       .order('created_at', { ascending: false })
       .limit(50);
     setAlertes(data || []);
+
+    const { data: alertesSos } = await supabase
+      .from('alertes_sos')
+      .select('id, nom, telephone, lieu, statut, created_at')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    setSos(alertesSos || []);
+
     setChargement(false);
+  }
+
+  async function changerStatutSos(id, nouveauStatut) {
+    await supabase.from('alertes_sos').update({ statut: nouveauStatut }).eq('id', id);
+    charger();
   }
 
   async function changerStatut(id, nouveauStatut) {
@@ -73,6 +87,35 @@ export default function GestionVols() {
       </div>
       <div className="content">
         {chargement && <p style={{ color: 'var(--ink-soft)' }}>Chargement…</p>}
+
+        <p style={{ fontSize: 13, color: 'var(--ink-soft)', marginBottom: 8 }}>Alertes SOS citoyennes</p>
+        {!chargement && sos.length === 0 && (
+          <p style={{ color: 'var(--ink-soft)', fontSize: 14, marginBottom: 16 }}>Aucune alerte SOS.</p>
+        )}
+        {sos.map((s) => (
+          <div key={s.id} className="liste-item">
+            <span className="plaque">🆘 {s.nom || 'Citoyen'}</span>
+            {' '}
+            <span className={`badge ${s.statut === 'resolu' ? 'actif' : s.statut === 'en_cours' ? 'suspect' : 'vole'}`}>{s.statut}</span>
+            <div className="meta">{s.telephone || 'Téléphone inconnu'} — {new Date(s.created_at).toLocaleString('fr-FR')}</div>
+            {s.statut !== 'resolu' && (
+              <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+                {s.statut === 'nouveau' && (
+                  <button className="btn secondaire" style={{ width: 'auto', padding: '8px 14px', fontSize: 13 }} onClick={() => changerStatutSos(s.id, 'en_cours')}>
+                    Marquer en cours
+                  </button>
+                )}
+                <button className="btn secondaire" style={{ width: 'auto', padding: '8px 14px', fontSize: 13 }} onClick={() => changerStatutSos(s.id, 'resolu')}>
+                  Marquer résolu
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+
+        <div className="divider" />
+
+        <p style={{ fontSize: 13, color: 'var(--ink-soft)', marginBottom: 8 }}>Déclarations, interceptions, signalements</p>
 
         {!chargement && alertes.length === 0 && (
           <p style={{ color: 'var(--ink-soft)' }}>Aucune alerte pour l'instant.</p>

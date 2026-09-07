@@ -13,6 +13,7 @@ export default function Accueil() {
         </p>
 
         <Link href="/verifier" className="btn">Vérifier un engin</Link>
+        <Link href="/citoyen/login" className="btn secondaire">Espace citoyen (mes véhicules)</Link>
         <Link href="/agent/login" className="btn secondaire">Espace agent</Link>
       </div>
     </div>
