@@ -30,6 +30,12 @@ export default function TableauDeBord() {
         return;
       }
 
+      if (agent.role === 'admin') {
+        await supabase.auth.signOut();
+        router.push('/agent/login');
+        return;
+      }
+
       setSession(data.session);
       setRole(agent.role);
       chargerEngins();

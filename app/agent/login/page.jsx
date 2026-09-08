@@ -29,7 +29,7 @@ export default function ConnexionAgent() {
 
     const { data: agent } = await supabase
       .from('agents')
-      .select('id')
+      .select('id, role')
       .eq('user_id', connexion.user.id)
       .maybeSingle();
 
@@ -38,6 +38,12 @@ export default function ConnexionAgent() {
     if (!agent) {
       await supabase.auth.signOut();
       setErreur("Ce compte n'a pas accès à l'espace agent.");
+      return;
+    }
+
+    if (agent.role === 'admin') {
+      await supabase.auth.signOut();
+      setErreur("Ce compte est un compte administrateur. Utilisez le Portail Administration.");
       return;
     }
 

@@ -17,12 +17,25 @@ export default function ConnexionCitoyen() {
     setErreur('');
     setChargement(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password: motDePasse });
+    const { data: connexion, error } = await supabase.auth.signInWithPassword({ email, password: motDePasse });
+
+    if (error) {
+      setChargement(false);
+      setErreur("Identifiants incorrects. Vérifiez l'email et le mot de passe.");
+      return;
+    }
+
+    const { data: agent } = await supabase
+      .from('agents')
+      .select('id')
+      .eq('user_id', connexion.user.id)
+      .maybeSingle();
 
     setChargement(false);
 
-    if (error) {
-      setErreur("Identifiants incorrects. Vérifiez l'email et le mot de passe.");
+    if (agent) {
+      await supabase.auth.signOut();
+      setErreur("Ce compte est un compte agent ou administrateur. Utilisez l'espace correspondant.");
       return;
     }
 

@@ -25,6 +25,19 @@ export default function EspaceCitoyen() {
         router.push('/citoyen/login');
         return;
       }
+
+      const { data: agent } = await supabase
+        .from('agents')
+        .select('id')
+        .eq('user_id', data.session.user.id)
+        .maybeSingle();
+
+      if (agent) {
+        await supabase.auth.signOut();
+        router.push('/citoyen/login');
+        return;
+      }
+
       setSession(data.session);
       const { data: c } = await supabase.from('citoyens').select('*').eq('user_id', data.session.user.id).maybeSingle();
       if (!c) {
