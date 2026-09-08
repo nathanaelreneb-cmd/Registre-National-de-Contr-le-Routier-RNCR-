@@ -20,28 +20,29 @@ export default function InscriptionCitoyen() {
     setErreur('');
     setChargement(true);
 
-    const { data: inscription, error: erreurInscription } = await supabase.auth.signUp({
+    const reponse = await fetch('/api/citoyen/inscription', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
+    });
+    const resultat = await reponse.json();
+
+    if (!reponse.ok) {
+      setChargement(false);
+      setErreur(resultat.erreur || "Erreur lors de l'inscription.");
+      return;
+    }
+
+    // Compte créé sans confirmation email requise : connexion immédiate
+    const { error: erreurConnexion } = await supabase.auth.signInWithPassword({
       email: form.email,
       password: form.motDePasse,
     });
 
-    if (erreurInscription || !inscription.user) {
-      setChargement(false);
-      setErreur(erreurInscription ? erreurInscription.message : "Erreur lors de l'inscription.");
-      return;
-    }
-
-    const { error: erreurProfil } = await supabase.from('citoyens').insert({
-      user_id: inscription.user.id,
-      nom: form.nom,
-      telephone: form.telephone,
-      cni: form.cni,
-    });
-
     setChargement(false);
 
-    if (erreurProfil) {
-      setErreur("Compte créé, mais erreur lors de l'enregistrement du profil. Contactez le support.");
+    if (erreurConnexion) {
+      setErreur('Compte créé. Connectez-vous depuis la page de connexion.');
       return;
     }
 

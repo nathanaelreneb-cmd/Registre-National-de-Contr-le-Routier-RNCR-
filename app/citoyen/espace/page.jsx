@@ -14,6 +14,10 @@ export default function EspaceCitoyen() {
   const [plaqueAAssocier, setPlaqueAAssocier] = useState('');
   const [erreur, setErreur] = useState('');
   const [message, setMessage] = useState('');
+  const [profilIntrouvable, setProfilIntrouvable] = useState(false);
+  const [nomProfil, setNomProfil] = useState('');
+  const [telephoneProfil, setTelephoneProfil] = useState('');
+  const [cniProfil, setCniProfil] = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -22,11 +26,40 @@ export default function EspaceCitoyen() {
         return;
       }
       setSession(data.session);
-      const { data: c } = await supabase.from('citoyens').select('*').eq('user_id', data.session.user.id).single();
+      const { data: c } = await supabase.from('citoyens').select('*').eq('user_id', data.session.user.id).maybeSingle();
+      if (!c) {
+        setProfilIntrouvable(true);
+        setChargement(false);
+        return;
+      }
       setCitoyen(c);
       chargerEngins(c);
     });
   }, []);
+
+  async function completerProfil(e) {
+    e.preventDefault();
+    setErreur('');
+    if (!nomProfil.trim() || !telephoneProfil.trim() || !cniProfil.trim()) {
+      setErreur('Tous les champs sont obligatoires.');
+      return;
+    }
+
+    const { data: nouveauProfil, error } = await supabase
+      .from('citoyens')
+      .insert({ user_id: session.user.id, nom: nomProfil.trim(), telephone: telephoneProfil.trim(), cni: cniProfil.trim() })
+      .select()
+      .single();
+
+    if (error) {
+      setErreur("Erreur lors de l'enregistrement du profil.");
+      return;
+    }
+
+    setProfilIntrouvable(false);
+    setCitoyen(nouveauProfil);
+    chargerEngins(nouveauProfil);
+  }
 
   async function chargerEngins(c) {
     if (!c) { setChargement(false); return; }
@@ -106,6 +139,38 @@ export default function EspaceCitoyen() {
   async function seDeconnecter() {
     await supabase.auth.signOut();
     router.push('/citoyen/login');
+  }
+
+  if (profilIntrouvable) {
+    return (
+      <div className="shell">
+        <div className="header">
+          <p className="sigle">Espace citoyen</p>
+          <h1>Compléter votre profil</h1>
+        </div>
+        <div className="content">
+          <p style={{ color: 'var(--ink-soft)', marginBottom: 20 }}>
+            Votre compte existe mais votre profil est incomplet. Renseignez ces informations pour continuer.
+          </p>
+          {erreur && <div className="erreur">{erreur}</div>}
+          <form onSubmit={completerProfil}>
+            <div className="field">
+              <label htmlFor="nomProfil">Nom complet</label>
+              <input id="nomProfil" value={nomProfil} onChange={(e) => setNomProfil(e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="telephoneProfil">Téléphone</label>
+              <input id="telephoneProfil" value={telephoneProfil} onChange={(e) => setTelephoneProfil(e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="cniProfil">Numéro CNI</label>
+              <input id="cniProfil" value={cniProfil} onChange={(e) => setCniProfil(e.target.value)} />
+            </div>
+            <button type="submit" className="btn">Enregistrer</button>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   if (!session || !citoyen) {
