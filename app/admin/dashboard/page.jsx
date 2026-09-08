@@ -83,6 +83,7 @@ export default function DashboardAdmin() {
   return (
     <div className="shell" style={{ maxWidth: 720 }}>
       <div className="header">
+        <a href="/" style={{ display: 'inline-block', color: 'var(--brand)', fontSize: 14, marginBottom: 10, textDecoration: 'none' }}>← Accueil</a>
         <p className="sigle">Portail Administration</p>
         <h1>Tableau de bord national</h1>
       </div>

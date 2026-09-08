@@ -145,6 +145,7 @@ export default function EspaceCitoyen() {
     return (
       <div className="shell">
         <div className="header">
+        <a href="/" style={{ display: 'inline-block', color: 'var(--brand)', fontSize: 14, marginBottom: 10, textDecoration: 'none' }}>← Accueil</a>
           <p className="sigle">Espace citoyen</p>
           <h1>Compléter votre profil</h1>
         </div>

@@ -16,15 +16,28 @@ export default function ConnexionAgent() {
     setErreur('');
     setChargement(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: connexion, error } = await supabase.auth.signInWithPassword({
       email,
       password: motDePasse,
     });
 
+    if (error) {
+      setChargement(false);
+      setErreur("Identifiants incorrects. Vérifiez l'email et le mot de passe.");
+      return;
+    }
+
+    const { data: agent } = await supabase
+      .from('agents')
+      .select('id')
+      .eq('user_id', connexion.user.id)
+      .maybeSingle();
+
     setChargement(false);
 
-    if (error) {
-      setErreur("Identifiants incorrects. Vérifiez l'email et le mot de passe.");
+    if (!agent) {
+      await supabase.auth.signOut();
+      setErreur("Ce compte n'a pas accès à l'espace agent.");
       return;
     }
 
@@ -34,6 +47,7 @@ export default function ConnexionAgent() {
   return (
     <div className="shell">
       <div className="header">
+        <button onClick={() => window.history.back()} style={{ background: 'none', border: 'none', color: 'var(--brand)', fontSize: 14, padding: 0, marginBottom: 10, cursor: 'pointer' }}>← Retour</button>
         <p className="sigle">Espace agent</p>
         <h1>Connexion</h1>
       </div>

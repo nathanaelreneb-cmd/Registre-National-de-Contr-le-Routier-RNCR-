@@ -76,6 +76,7 @@ export default function SaisirCode() {
   return (
     <div className="shell">
       <div className="header">
+        <button onClick={() => window.history.back()} style={{ background: 'none', border: 'none', color: 'var(--brand)', fontSize: 14, padding: 0, marginBottom: 10, cursor: 'pointer' }}>← Retour</button>
         <p className="sigle">Vérification publique</p>
         <h1>Vérifier un engin</h1>
       </div>

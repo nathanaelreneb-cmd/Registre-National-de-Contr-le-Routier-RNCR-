@@ -69,6 +69,7 @@ export default function ResultatVerification({ params }) {
     return (
       <div className="shell">
         <div className="header">
+        <button onClick={() => window.history.back()} style={{ background: 'none', border: 'none', color: 'var(--brand)', fontSize: 14, padding: 0, marginBottom: 10, cursor: 'pointer' }}>← Retour</button>
           <p className="sigle">Vérification publique</p>
           <h1>Résultat</h1>
         </div>

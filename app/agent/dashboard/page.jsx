@@ -13,25 +13,28 @@ export default function TableauDeBord() {
   const [role, setRole] = useState(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) {
         router.push('/agent/login');
         return;
       }
+      const { data: agent } = await supabase
+        .from('agents')
+        .select('role')
+        .eq('user_id', data.session.user.id)
+        .maybeSingle();
+
+      if (!agent) {
+        await supabase.auth.signOut();
+        router.push('/agent/login');
+        return;
+      }
+
       setSession(data.session);
+      setRole(agent.role);
       chargerEngins();
-      chargerRole(data.session.user.id);
     });
   }, []);
-
-  async function chargerRole(userId) {
-    const { data } = await supabase
-      .from('agents')
-      .select('role')
-      .eq('user_id', userId)
-      .single();
-    setRole(data ? data.role : 'agent');
-  }
 
   async function chargerEngins() {
     setChargement(true);
@@ -54,6 +57,7 @@ export default function TableauDeBord() {
   return (
     <div className="shell">
       <div className="header">
+        <a href="/" style={{ display: 'inline-block', color: 'var(--brand)', fontSize: 14, marginBottom: 10, textDecoration: 'none' }}>← Accueil</a>
         <p className="sigle">Espace agent</p>
         <h1>Tableau de bord</h1>
       </div>

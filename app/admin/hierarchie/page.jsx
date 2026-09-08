@@ -99,6 +99,7 @@ export default function Hierarchie() {
   return (
     <div className="shell" style={{ maxWidth: 720 }}>
       <div className="header">
+        <button onClick={() => window.history.back()} style={{ background: 'none', border: 'none', color: 'var(--brand)', fontSize: 14, padding: 0, marginBottom: 10, cursor: 'pointer' }}>← Retour</button>
         <p className="sigle">Portail Administration</p>
         <h1>Hiérarchie & comptes</h1>
       </div>

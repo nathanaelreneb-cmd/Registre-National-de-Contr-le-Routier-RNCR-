@@ -32,6 +32,7 @@ export default function ConnexionCitoyen() {
   return (
     <div className="shell">
       <div className="header">
+        <button onClick={() => window.history.back()} style={{ background: 'none', border: 'none', color: 'var(--brand)', fontSize: 14, padding: 0, marginBottom: 10, cursor: 'pointer' }}>← Retour</button>
         <p className="sigle">Espace citoyen</p>
         <h1>Connexion</h1>
       </div>
