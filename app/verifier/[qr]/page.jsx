@@ -46,11 +46,25 @@ export default function ResultatVerification({ params }) {
           agentId = agent ? agent.id : null;
         }
 
+        const position = await new Promise((resolve) => {
+          if (!navigator.geolocation) {
+            resolve(null);
+            return;
+          }
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve(pos.coords),
+            () => resolve(null), // refusé ou indisponible : on continue sans bloquer
+            { timeout: 5000 }
+          );
+        });
+
         await supabase.from('verifications').insert({
           engin_id: data.id,
           agent_id: agentId,
           resultat: data.statut,
           via_public: !session,
+          lieu_latitude: position ? position.latitude : null,
+          lieu_longitude: position ? position.longitude : null,
         });
       }
     }

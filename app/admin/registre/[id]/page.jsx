@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '../../../../lib/supabaseClient';
 
 export default function DetailEnginAdmin({ params }) {
@@ -125,6 +126,9 @@ export default function DetailEnginAdmin({ params }) {
             <div className="meta">{formaterDate(v.created_at)} — résultat : {v.resultat}</div>
           </div>
         ))}
+
+        <div className="divider" />
+        <Link href={`/admin/trajet/${engin.id}`} className="btn secondaire">Voir le trajet reconstitué</Link>
       </div>
     </div>
   );
