@@ -74,9 +74,16 @@ export default function TrajetEngin({ params }) {
       const carte = L.map(conteneurCarte.current).setView(coords[0], 14);
       carteRef.current = carte;
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      const couchePlan = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap',
       }).addTo(carte);
+
+      const coucheSatellite = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        { attribution: '© Esri' }
+      );
+
+      L.control.layers({ 'Plan': couchePlan, 'Satellite': coucheSatellite }).addTo(carte);
 
       L.polyline(coords, { color: '#1E3A5F', weight: 3 }).addTo(carte);
 

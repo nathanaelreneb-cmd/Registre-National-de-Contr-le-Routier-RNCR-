@@ -90,12 +90,21 @@ export default function RegistreCentral() {
         )}
 
         {resultats.map((e) => (
-          <Link key={e.id} href={`/admin/registre/${e.id}`} className="liste-item" style={{ display: 'block' }}>
-            <span className="plaque">{e.plaque || 'Sans plaque'}</span>
-            {' '}
-            <span className={`badge ${e.statut}`}>{e.statut}</span>
-            <div className="meta">{e.marque} {e.modele} — {e.proprietaire_nom || 'Propriétaire inconnu'}</div>
-          </Link>
+          <div key={e.id} className="liste-item">
+            <Link href={`/admin/registre/${e.id}`} style={{ display: 'block' }}>
+              <span className="plaque">{e.plaque || 'Sans plaque'}</span>
+              {' '}
+              <span className={`badge ${e.statut}`}>{e.statut}</span>
+              <div className="meta">{e.marque} {e.modele} — {e.proprietaire_nom || 'Propriétaire inconnu'}</div>
+            </Link>
+            <Link
+              href={`/admin/trajet/${e.id}`}
+              className="btn secondaire"
+              style={{ width: 'auto', padding: '8px 14px', fontSize: 13, marginTop: 10, display: 'inline-block' }}
+            >
+              Voir le trajet
+            </Link>
+          </div>
         ))}
       </div>
     </div>
