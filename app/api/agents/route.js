@@ -41,16 +41,18 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { nom, telephone, email, motDePasse, role } = body;
+  const { nom, telephone, email, motDePasse, role, posteId, regionId } = body;
 
   if (!nom || !email || !motDePasse) {
     return Response.json({ erreur: 'Nom, email et mot de passe sont obligatoires.' }, { status: 400 });
   }
 
-  const roleFinal = role === 'responsable' ? 'responsable' : 'agent';
+  const rolesValides = ['agent', 'responsable', 'responsable_regional'];
+  const roleFinal = rolesValides.includes(role) ? role : 'agent';
 
-  // Le nouvel agent hérite automatiquement du poste de celui qui le crée
-  const posteFinal = agentDemandeur.role === 'responsable' ? agentDemandeur.poste_id : null;
+  // Le poste/la région choisis dans le formulaire priment ; à défaut, on hérite du poste du créateur
+  const posteFinal = posteId || (agentDemandeur.role === 'responsable' ? agentDemandeur.poste_id : null);
+  const regionFinal = roleFinal === 'responsable_regional' ? (regionId || null) : null;
 
   const { data: nouvelUtilisateur, error: erreurCreation } = await supabaseAdmin.auth.admin.createUser({
     email,
@@ -67,7 +69,8 @@ export async function POST(request) {
     nom,
     telephone: telephone || null,
     role: roleFinal,
-    poste_id: posteFinal,
+    poste_id: roleFinal === 'responsable_regional' ? null : posteFinal,
+    region_id: regionFinal,
   });
 
   if (erreurAgent) {
