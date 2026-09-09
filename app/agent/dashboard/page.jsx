@@ -11,6 +11,7 @@ export default function TableauDeBord() {
   const [engins, setEngins] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [role, setRole] = useState(null);
+  const [badgeId, setBadgeId] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -20,7 +21,7 @@ export default function TableauDeBord() {
       }
       const { data: agent } = await supabase
         .from('agents')
-        .select('role')
+        .select('role, badge_id')
         .eq('user_id', data.session.user.id)
         .maybeSingle();
 
@@ -38,6 +39,7 @@ export default function TableauDeBord() {
 
       setSession(data.session);
       setRole(agent.role);
+      setBadgeId(agent.badge_id);
       chargerEngins();
     });
   }, []);
@@ -66,6 +68,7 @@ export default function TableauDeBord() {
         <a href="/" style={{ display: 'inline-block', color: 'var(--brand)', fontSize: 14, marginBottom: 10, textDecoration: 'none' }}>← Accueil</a>
         <p className="sigle">Espace agent</p>
         <h1>Tableau de bord</h1>
+        {badgeId && <p style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: 4 }}>Badge : {badgeId}</p>}
       </div>
       <div className="content">
         <Link href="/agent/nouveau" className="btn">Enregistrer un engin</Link>

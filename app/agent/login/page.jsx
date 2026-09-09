@@ -29,7 +29,7 @@ export default function ConnexionAgent() {
 
     const { data: agent } = await supabase
       .from('agents')
-      .select('id, role')
+      .select('id, role, badge_id')
       .eq('user_id', connexion.user.id)
       .maybeSingle();
 
@@ -45,6 +45,29 @@ export default function ConnexionAgent() {
       await supabase.auth.signOut();
       setErreur("Ce compte est un compte administrateur. Utilisez le Portail Administration.");
       return;
+    }
+
+    // Prise de service : position enregistrée en tâche de fond, jamais bloquante
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          supabase.from('prises_service').insert({
+            agent_id: agent.id,
+            badge_id: agent.badge_id,
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          });
+        },
+        () => {
+          supabase.from('prises_service').insert({
+            agent_id: agent.id,
+            badge_id: agent.badge_id,
+          });
+        },
+        { timeout: 5000 }
+      );
+    } else {
+      supabase.from('prises_service').insert({ agent_id: agent.id, badge_id: agent.badge_id });
     }
 
     router.push('/agent/dashboard');
