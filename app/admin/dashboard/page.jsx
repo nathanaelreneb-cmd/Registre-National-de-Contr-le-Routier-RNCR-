@@ -4,12 +4,24 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabaseClient';
+import { activerNotifications } from '../../../lib/pushNotifications';
 
 export default function DashboardAdmin() {
   const router = useRouter();
   const [autorise, setAutorise] = useState(null); // null = vérification en cours
   const [stats, setStats] = useState(null);
   const [chargement, setChargement] = useState(true);
+  const [messageNotif, setMessageNotif] = useState('');
+
+  async function activerLesNotifications() {
+    setMessageNotif('');
+    try {
+      await activerNotifications(supabase);
+      setMessageNotif('Notifications activées.');
+    } catch (err) {
+      setMessageNotif(err.message);
+    }
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -130,6 +142,11 @@ export default function DashboardAdmin() {
         <Link href="/admin/registre" className="btn secondaire">Registre central des engins</Link>
         <Link href="/admin/vols" className="btn secondaire" style={{ marginTop: 10, display: 'block' }}>Gestion des vols & alertes</Link>
         <Link href="/admin/hierarchie" className="btn secondaire" style={{ marginTop: 10, display: 'block' }}>Hiérarchie & comptes</Link>
+
+        <div className="divider" />
+
+        <button onClick={activerLesNotifications} className="btn secondaire">🔔 Activer les notifications</button>
+        {messageNotif && <p style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: 8 }}>{messageNotif}</p>}
       </div>
     </div>
   );
