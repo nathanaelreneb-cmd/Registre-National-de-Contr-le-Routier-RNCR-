@@ -41,7 +41,7 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { nom, telephone, email, motDePasse, role, posteId, regionId } = body;
+  const { nom, telephone, email, motDePasse, role, posteId, regionId, badgeId } = body;
 
   if (!nom || !email || !motDePasse) {
     return Response.json({ erreur: 'Nom, email et mot de passe sont obligatoires.' }, { status: 400 });
@@ -71,6 +71,7 @@ export async function POST(request) {
     role: roleFinal,
     poste_id: roleFinal === 'responsable_regional' ? null : posteFinal,
     region_id: regionFinal,
+    badge_id: badgeId || null,
   });
 
   if (erreurAgent) {

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 
 export default function NouvelAgent() {
-  const [form, setForm] = useState({ nom: '', telephone: '', email: '', motDePasse: '', role: 'agent' });
+  const [form, setForm] = useState({ nom: '', telephone: '', email: '', motDePasse: '', role: 'agent', badgeId: '' });
   const [corps, setCorps] = useState([]);
   const [regions, setRegions] = useState([]);
   const [postes, setPostes] = useState([]);
@@ -70,7 +70,7 @@ export default function NouvelAgent() {
     }
 
     setSucces(true);
-    setForm({ nom: '', telephone: '', email: '', motDePasse: '', role: 'agent' });
+    setForm({ nom: '', telephone: '', email: '', motDePasse: '', role: 'agent', badgeId: '' });
     setCorpsChoisi('');
     setRegionChoisie('');
     setPosteChoisi('');
@@ -110,6 +110,11 @@ export default function NouvelAgent() {
           <div className="field">
             <label htmlFor="telephone">Téléphone</label>
             <input id="telephone" value={form.telephone} onChange={(e) => majChamp('telephone', e.target.value)} />
+          </div>
+
+          <div className="field">
+            <label htmlFor="badgeId">Numéro de badge / matricule</label>
+            <input id="badgeId" value={form.badgeId} onChange={(e) => majChamp('badgeId', e.target.value)} />
           </div>
 
           <div className="field">
