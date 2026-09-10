@@ -18,6 +18,11 @@ export default function EspaceCitoyen() {
   const [nomProfil, setNomProfil] = useState('');
   const [telephoneProfil, setTelephoneProfil] = useState('');
   const [cniProfil, setCniProfil] = useState('');
+  const [groupeSanguin, setGroupeSanguin] = useState('');
+  const [allergies, setAllergies] = useState('');
+  const [contactUrgenceNom, setContactUrgenceNom] = useState('');
+  const [contactUrgenceTelephone, setContactUrgenceTelephone] = useState('');
+  const [messageMedical, setMessageMedical] = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -46,9 +51,29 @@ export default function EspaceCitoyen() {
         return;
       }
       setCitoyen(c);
+      setGroupeSanguin(c.groupe_sanguin || '');
+      setAllergies(c.allergies || '');
+      setContactUrgenceNom(c.contact_urgence_nom || '');
+      setContactUrgenceTelephone(c.contact_urgence_telephone || '');
       chargerEngins(c);
     });
   }, []);
+
+  async function enregistrerFicheMedicale(e) {
+    e.preventDefault();
+    setMessageMedical('');
+    const { error } = await supabase
+      .from('citoyens')
+      .update({
+        groupe_sanguin: groupeSanguin || null,
+        allergies: allergies || null,
+        contact_urgence_nom: contactUrgenceNom || null,
+        contact_urgence_telephone: contactUrgenceTelephone || null,
+      })
+      .eq('id', citoyen.id);
+
+    setMessageMedical(error ? "Erreur lors de l'enregistrement." : 'Fiche médicale enregistrée.');
+  }
 
   async function completerProfil(e) {
     e.preventDefault();
@@ -79,10 +104,28 @@ export default function EspaceCitoyen() {
     setChargement(true);
     const { data } = await supabase
       .from('engins')
-      .select('id, plaque, marque, modele, type_engin, statut, qr_code')
+      .select('id, plaque, marque, modele, type_engin, statut, qr_code, created_at')
       .eq('proprietaire_citoyen_id', c.id)
       .order('created_at', { ascending: false });
-    setEngins(data || []);
+
+    const liste = data || [];
+
+    if (liste.length > 0) {
+      const { data: sigs } = await supabase
+        .from('signalements')
+        .select('engin_id, created_at')
+        .in('engin_id', liste.map((e) => e.id))
+        .order('created_at', { ascending: false });
+
+      liste.forEach((e) => {
+        const dernier = (sigs || []).find((s) => s.engin_id === e.id);
+        const depuis = dernier ? dernier.created_at : e.created_at;
+        const moisEcoules = (Date.now() - new Date(depuis).getTime()) / (1000 * 60 * 60 * 24 * 30);
+        e.moisSansIncident = Math.floor(moisEcoules);
+      });
+    }
+
+    setEngins(liste);
     setChargement(false);
   }
 
@@ -229,6 +272,11 @@ export default function EspaceCitoyen() {
             {' '}
             <span className={`badge ${e.statut}`}>{e.statut}</span>
             <div className="meta">{e.type_engin} — {e.marque} {e.modele}</div>
+            {e.statut === 'actif' && e.moisSansIncident >= 6 && (
+              <div style={{ marginTop: 6, fontSize: 13, color: 'var(--statut-actif)', fontWeight: 700 }}>
+                🏅 Bonne conduite — {e.moisSansIncident} mois sans incident
+              </div>
+            )}
 
             <div style={{ marginTop: 10, textAlign: 'center' }}>
               <QRCodeCanvas value={`${typeof window !== 'undefined' ? window.location.origin : ''}/verifier/${e.qr_code}`} size={120} includeMargin={true} />
@@ -265,6 +313,32 @@ export default function EspaceCitoyen() {
         <p style={{ fontSize: 12, color: 'var(--ink-soft)', marginTop: 8 }}>
           Ça ne marche que si le numéro CNI enregistré par l'agent correspond exactement au vôtre.
         </p>
+
+        <div className="divider" />
+
+        <p style={{ fontSize: 13, color: 'var(--ink-soft)', marginBottom: 8 }}>
+          Fiche médicale d'urgence (utilisée en cas de SOS)
+        </p>
+        {messageMedical && <p style={{ fontSize: 13, color: 'var(--statut-actif)', marginBottom: 8 }}>{messageMedical}</p>}
+        <form onSubmit={enregistrerFicheMedicale}>
+          <div className="field">
+            <label htmlFor="groupeSanguin">Groupe sanguin</label>
+            <input id="groupeSanguin" value={groupeSanguin} onChange={(e) => setGroupeSanguin(e.target.value)} placeholder="Ex : O+" />
+          </div>
+          <div className="field">
+            <label htmlFor="allergies">Allergies</label>
+            <input id="allergies" value={allergies} onChange={(e) => setAllergies(e.target.value)} placeholder="Ex : pénicilline" />
+          </div>
+          <div className="field">
+            <label htmlFor="contactUrgenceNom">Personne à contacter en urgence</label>
+            <input id="contactUrgenceNom" value={contactUrgenceNom} onChange={(e) => setContactUrgenceNom(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="contactUrgenceTelephone">Téléphone de cette personne</label>
+            <input id="contactUrgenceTelephone" value={contactUrgenceTelephone} onChange={(e) => setContactUrgenceTelephone(e.target.value)} />
+          </div>
+          <button type="submit" className="btn secondaire">Enregistrer la fiche médicale</button>
+        </form>
 
         <div className="divider" />
         <button onClick={seDeconnecter} className="btn secondaire">Se déconnecter</button>
