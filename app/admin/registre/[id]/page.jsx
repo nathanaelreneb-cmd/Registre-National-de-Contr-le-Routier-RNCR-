@@ -95,6 +95,10 @@ export default function DetailEnginAdmin({ params }) {
           <dd>{engin.proprietaire_telephone || '—'}</dd>
           <dt>CNI du propriétaire</dt>
           <dd>{engin.proprietaire_cni || '—'}</dd>
+          <dt>Situation fiscale</dt>
+          <dd>{engin.statut_fiscal === 'a_jour' ? 'À jour' : engin.statut_fiscal === 'en_retard' ? 'En retard' : 'Inconnue'}</dd>
+          <dt>Expiration assurance</dt>
+          <dd>{engin.assurance_expiration || '—'}</dd>
           <dt>Enregistré le</dt>
           <dd>{formaterDate(engin.created_at)}</dd>
         </dl>

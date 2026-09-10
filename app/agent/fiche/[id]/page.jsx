@@ -59,7 +59,6 @@ export default function FicheEngin({ params }) {
           });
           return;
         } catch (err) {
-          // L'agent a peut-être annulé le partage — pas une erreur à afficher
           return;
         }
       }
@@ -106,6 +105,10 @@ export default function FicheEngin({ params }) {
           <dd>{engin.proprietaire_nom}</dd>
           <dt>Statut</dt>
           <dd><span className={`badge ${engin.statut}`}>{engin.statut}</span></dd>
+          <dt>Situation fiscale</dt>
+          <dd>{engin.statut_fiscal === 'a_jour' ? 'À jour' : engin.statut_fiscal === 'en_retard' ? 'En retard' : 'Inconnue'}</dd>
+          <dt>Expiration assurance</dt>
+          <dd>{engin.assurance_expiration || '—'}</dd>
         </dl>
 
         <div className="divider no-print" />

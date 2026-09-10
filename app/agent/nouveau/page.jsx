@@ -21,6 +21,8 @@ export default function NouvelEngin() {
     proprietaire_nom: '',
     proprietaire_telephone: '',
     proprietaire_cni: '',
+    statut_fiscal: 'inconnu',
+    assurance_expiration: '',
   });
   const [erreur, setErreur] = useState('');
   const [chargement, setChargement] = useState(false);
@@ -42,9 +44,12 @@ export default function NouvelEngin() {
 
     const qrCode = genererCodeQr();
 
+    const donneesEnvoyees = { ...form };
+    if (!donneesEnvoyees.assurance_expiration) donneesEnvoyees.assurance_expiration = null;
+
     const { data, error } = await supabase
       .from('engins')
-      .insert({ ...form, qr_code: qrCode, statut: 'actif' })
+      .insert({ ...donneesEnvoyees, qr_code: qrCode, statut: 'actif' })
       .select('id')
       .single();
 
@@ -119,6 +124,22 @@ export default function NouvelEngin() {
           <div className="field">
             <label htmlFor="cni">Numéro CNI du propriétaire</label>
             <input id="cni" required value={form.proprietaire_cni} onChange={(e) => majChamp('proprietaire_cni', e.target.value)} />
+          </div>
+
+          <div className="divider" />
+
+          <div className="field">
+            <label htmlFor="statut_fiscal">Situation fiscale (taxe/vignette)</label>
+            <select id="statut_fiscal" value={form.statut_fiscal} onChange={(e) => majChamp('statut_fiscal', e.target.value)}>
+              <option value="inconnu">Inconnue / à vérifier</option>
+              <option value="a_jour">À jour</option>
+              <option value="en_retard">En retard</option>
+            </select>
+          </div>
+
+          <div className="field">
+            <label htmlFor="assurance_expiration">Expiration de l'assurance (optionnel)</label>
+            <input id="assurance_expiration" type="date" value={form.assurance_expiration} onChange={(e) => majChamp('assurance_expiration', e.target.value)} />
           </div>
 
           <button type="submit" className="btn" disabled={chargement}>
