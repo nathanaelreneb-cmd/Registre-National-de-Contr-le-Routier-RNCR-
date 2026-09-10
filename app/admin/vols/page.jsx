@@ -50,7 +50,7 @@ export default function GestionVols() {
 
     const { data: alertesSos } = await supabase
       .from('alertes_sos')
-      .select('id, nom, telephone, lieu, statut, created_at')
+      .select('id, nom, telephone, lieu, statut, created_at, citoyens(groupe_sanguin, allergies, contact_urgence_nom, contact_urgence_telephone)')
       .order('created_at', { ascending: false })
       .limit(50);
     setSos(alertesSos || []);
@@ -99,6 +99,15 @@ export default function GestionVols() {
             {' '}
             <span className={`badge ${s.statut === 'resolu' ? 'actif' : s.statut === 'en_cours' ? 'suspect' : 'vole'}`}>{s.statut}</span>
             <div className="meta">{s.telephone || 'Téléphone inconnu'} — {new Date(s.created_at).toLocaleString('fr-FR')}</div>
+            {s.citoyens && (s.citoyens.groupe_sanguin || s.citoyens.allergies || s.citoyens.contact_urgence_nom) && (
+              <div style={{ marginTop: 8, fontSize: 13, background: '#FBEAEA', padding: 8, borderRadius: 4 }}>
+                {s.citoyens.groupe_sanguin && <div>🩸 Groupe sanguin : {s.citoyens.groupe_sanguin}</div>}
+                {s.citoyens.allergies && <div>⚠️ Allergies : {s.citoyens.allergies}</div>}
+                {s.citoyens.contact_urgence_nom && (
+                  <div>📞 Contact urgence : {s.citoyens.contact_urgence_nom} ({s.citoyens.contact_urgence_telephone || 'tél. inconnu'})</div>
+                )}
+              </div>
+            )}
             {s.statut !== 'resolu' && (
               <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
                 {s.statut === 'nouveau' && (
