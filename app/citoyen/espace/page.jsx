@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { QRCodeCanvas } from 'qrcode.react';
 import { supabase } from '../../../lib/supabaseClient';
+import { activerNotifications } from '../../../lib/pushNotifications';
+import { lireVocal } from '../../../lib/voix';
 
 export default function EspaceCitoyen() {
   const router = useRouter();
@@ -23,6 +25,7 @@ export default function EspaceCitoyen() {
   const [contactUrgenceNom, setContactUrgenceNom] = useState('');
   const [contactUrgenceTelephone, setContactUrgenceTelephone] = useState('');
   const [messageMedical, setMessageMedical] = useState('');
+  const [messageNotif, setMessageNotif] = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -104,7 +107,7 @@ export default function EspaceCitoyen() {
     setChargement(true);
     const { data } = await supabase
       .from('engins')
-      .select('id, plaque, marque, modele, type_engin, statut, qr_code, created_at')
+      .select('id, plaque, marque, modele, type_engin, statut, qr_code, created_at, assurance_expiration')
       .eq('proprietaire_citoyen_id', c.id)
       .order('created_at', { ascending: false });
 
@@ -122,6 +125,11 @@ export default function EspaceCitoyen() {
         const depuis = dernier ? dernier.created_at : e.created_at;
         const moisEcoules = (Date.now() - new Date(depuis).getTime()) / (1000 * 60 * 60 * 24 * 30);
         e.moisSansIncident = Math.floor(moisEcoules);
+
+        if (e.assurance_expiration) {
+          const joursRestants = Math.floor((new Date(e.assurance_expiration).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+          e.joursAvantExpiration = joursRestants;
+        }
       });
     }
 
@@ -176,6 +184,7 @@ export default function EspaceCitoyen() {
   async function envoyerSos() {
     setErreur('');
     setMessage('');
+    lireVocal('Envoi de votre alerte S O S en cours.');
     const { data: { session: s } } = await supabase.auth.getSession();
     const reponse = await fetch('/api/sos', {
       method: 'POST',
@@ -186,10 +195,22 @@ export default function EspaceCitoyen() {
 
     if (!reponse.ok) {
       setErreur(resultat.erreur);
+      lireVocal("Erreur lors de l'envoi de l'alerte.");
       return;
     }
 
     setMessage('Alerte SOS envoyée. Le poste le plus proche a été notifié.');
+    lireVocal('Alerte envoyée. Le poste le plus proche a été notifié.');
+  }
+
+  async function activerLesNotifications() {
+    setMessageNotif('');
+    try {
+      await activerNotifications(supabase);
+      setMessageNotif('Notifications activées.');
+    } catch (err) {
+      setMessageNotif(err.message);
+    }
   }
 
   async function seDeconnecter() {
@@ -256,6 +277,17 @@ export default function EspaceCitoyen() {
           🆘 SOS — Envoyer une alerte au poste le plus proche
         </button>
 
+        <button onClick={activerLesNotifications} className="btn secondaire" style={{ marginTop: 10 }}>
+          🔔 Activer les notifications
+        </button>
+        {messageNotif && <p style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: 8 }}>{messageNotif}</p>}
+
+        {engins.some((e) => e.joursAvantExpiration !== undefined && e.joursAvantExpiration >= 0 && e.joursAvantExpiration <= 7) && (
+          <div style={{ background: '#FFF7E6', border: '1px solid var(--statut-suspect)', color: 'var(--statut-suspect)', padding: '10px 12px', borderRadius: 4, fontSize: 14, marginTop: 16 }}>
+            ⏰ Une ou plusieurs de vos assurances expirent dans moins de 7 jours — voir le détail sur chaque véhicule ci-dessous.
+          </div>
+        )}
+
         <div className="divider" />
 
         <p style={{ fontSize: 13, color: 'var(--ink-soft)', marginBottom: 8 }}>Mes véhicules</p>
@@ -275,6 +307,11 @@ export default function EspaceCitoyen() {
             {e.statut === 'actif' && e.moisSansIncident >= 6 && (
               <div style={{ marginTop: 6, fontSize: 13, color: 'var(--statut-actif)', fontWeight: 700 }}>
                 🏅 Bonne conduite — {e.moisSansIncident} mois sans incident
+              </div>
+            )}
+            {e.joursAvantExpiration !== undefined && e.joursAvantExpiration >= 0 && e.joursAvantExpiration <= 7 && (
+              <div style={{ marginTop: 6, fontSize: 13, color: 'var(--statut-suspect)', fontWeight: 700 }}>
+                ⏰ Assurance expire dans {e.joursAvantExpiration} jour{e.joursAvantExpiration > 1 ? 's' : ''}
               </div>
             )}
 

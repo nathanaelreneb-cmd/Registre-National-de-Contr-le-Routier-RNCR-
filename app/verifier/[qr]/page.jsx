@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabaseClient';
+import { lireVocal } from '../../../lib/voix';
 
 const LIBELLES = {
   actif: 'Engin en règle',
@@ -30,6 +31,12 @@ export default function ResultatVerification({ params }) {
         .maybeSingle();
 
       setEngin(data || null);
+
+      if (data) {
+        lireVocal(LIBELLES[data.statut] || 'Résultat indisponible');
+      } else {
+        lireVocal('Code inconnu, cet engin ne figure pas dans le registre.');
+      }
 
       if (data && !dejaEnregistre) {
         setDejaEnregistre(true);
