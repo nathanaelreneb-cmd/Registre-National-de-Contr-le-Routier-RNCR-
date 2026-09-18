@@ -9,31 +9,46 @@ export default function BongonoChauffeur() {
   const [active, setActive] = useState(false)
 
   useEffect(() => {
-    supabase.from('bongono_zones').select('*').then(r => { if(r.data) setZones(r.data) })
+    supabase.from('bongono_zones').select('*').eq('active', true).then(({ data }) => {
+      if (data) setZones(data)
+    })
   }, [])
 
-  function demarrerGuidage(){
-    setActive(true)
-    if('speechSynthesis' in window){
-      const u = new SpeechSynthesisUtterance('Guidage BONGONO activé. Bonne route, je vous préviens en cas de danger.')
-      u.lang='fr-FR'; speechSynthesis.speak(u)
+  function parler(texte) {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+      // CORRECTION ICI : on remplace BONGONO par Bongono pour la prononciation
+      const texteCorrige = texte.replace(/BONGONO/g, 'Bongono')
+      const utterance = new SpeechSynthesisUtterance(texteCorrige)
+      utterance.lang = 'fr-FR'
+      utterance.rate = 0.95
+      utterance.pitch = 1
+      window.speechSynthesis.speak(utterance)
     }
-    // Ici ton ancien code de guidage GPS qui surveille la position
-    alert('Guidage BONGONO activé - ' + zones.length + ' zones surveillées')
+  }
+
+  function demarrerGuidage() {
+    setActive(true)
+    parler('Bongono guidage, je vous guide tout au long de votre route, bonne route')
   }
 
   return (
-    <div style={{ padding: 20, textAlign: 'center' }}>
-      <h1 style={{ fontSize: 28, fontWeight: 'bold' }}>BONGONO</h1>
-      <p style={{ color: 'green', fontWeight: 'bold', marginTop: 10 }}>✅ {zones.length} panneaux virtuels actifs</p>
+    <div style={{padding:20, fontFamily:'sans-serif'}}>
+      <h1 style={{fontSize:22}}>🚨 Bongono Chauffeur</h1>
+      <p style={{color:'#666', fontSize:14}}>{zones.length} panneaux actifs sur votre route</p>
       
-      <div style={{ background: '#f5f5f5', padding: 20, borderRadius: 15, marginTop: 20 }}>
-        <p>Appuie pour activer l'alerte vocale sur la route</p>
-        <button onClick={demarrerGuidage} style={{ width: '100%', padding: 18, background: active ? 'green' : 'black', color: 'white', borderRadius: 12, fontSize: 18, fontWeight: 'bold', marginTop: 15, border: 'none' }}>
-          {active ? '✅ GUIDAGE ACTIVÉ' : '▶️ DÉMARRER LE GUIDAGE'}
-        </button>
+      <button onClick={demarrerGuidage} style={{padding:18, background:'#FF3B30', color:'white', border:'none', borderRadius:12, width:'100%', fontSize:16, fontWeight:'bold', marginTop:15}}>
+        {active ? '✅ Guidage Actif' : '▶️ Démarrer le guidage'}
+      </button>
+
+      <div style={{marginTop:20}}>
+        {zones.map(z => (
+          <div key={z.id} style={{border:'1px solid #ddd', padding:12, borderRadius:10, marginBottom:10}}>
+            <b>{z.type}</b><br/>
+            <span>{z.message}</span>
+          </div>
+        ))}
       </div>
-      <p style={{ marginTop: 20, fontSize: 12, color: '#888' }}>Pour chauffeurs - OUTI 2026</p>
     </div>
   )
 }
