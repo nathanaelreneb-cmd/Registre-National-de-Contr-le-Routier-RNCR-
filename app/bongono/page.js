@@ -7,74 +7,78 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.
 export default function BongonoChauffeur() {
   const [zones, setZones] = useState([])
   const [active, setActive] = useState(false)
-  const [log, setLog] = useState('Prêt')
+  const [log, setLog] = useState('Prêt - Clique pour tester')
 
   useEffect(() => {
     supabase.from('bongono_zones').select('*').eq('active', true).then(({ data }) => {
       if (data) setZones(data)
     })
+    // Pré-charge les voix
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.getVoices()
+    }
   }, [])
 
   function parler(texte) {
-    if (!('speechSynthesis' in window)) return
-    window.speechSynthesis.cancel()
-    setTimeout(() => {
-      const t = texte.replace(/BONGONO/g, 'Bongono')
-      const u = new SpeechSynthesisUtterance(t)
-      u.lang = 'fr-FR'
-      u.rate = 0.9
-      u.volume = 1
-      window.speechSynthesis.speak(u)
-      setLog('🔊 ' + t)
-    }, 100)
-  }
+    try {
+      const synth = window.speechSynthesis
+      if (!synth) {
+        setLog('❌ Pas de voix sur ce tel')
+        return
+      }
+      
+      // FIX 1 : on force le son
+      synth.cancel()
+      synth.resume()
 
-  function toggleGuidage() {
-    if (!active) {
-      setActive(true)
-      parler('Bongono guidage, je vous guide tout au long de votre route, bonne route')
-      setLog('✅ Guidage ACTIVÉ')
-    } else {
-      setActive(false)
-      window.speechSynthesis.cancel()
-      parler('Bongono guidage désactivé, à bientôt')
-      setLog('⏸️ Guidage désactivé')
+      // FIX 2 : Bongono pas BONGONO
+      const propre = texte.replace(/BONGONO/g, 'Bongono')
+      
+      const u = new SpeechSynthesisUtterance(propre)
+      u.lang = 'fr-FR'
+      u.volume = 1
+      u.rate = 0.9
+      u.pitch = 1
+
+      u.onstart = () => setLog('🔊 Ça parle: ' + propre)
+      u.onend = () => setLog('✅ Voix terminée')
+      u.onerror = (e) => setLog('❌ Erreur: ' + e.error + ' - Volume Média à 0 ?')
+
+      // FIX 3 : ON PARLE DIRECT, SANS setTimeout
+      synth.speak(u)
+      setLog('▶️ J\'essaye de parler...')
+      
+    } catch (e) {
+      setLog('❌ Bug: ' + e.message)
     }
   }
 
   return (
-    <div style={{padding:20, fontFamily:'sans-serif', maxWidth:500, margin:'0 auto'}}>
-      <h1 style={{fontSize:22}}>🚨 Bongono Chauffeur</h1>
-      <p style={{fontSize:12, color:'#666'}}>{log}</p>
-      <p style={{fontSize:14}}>{zones.length} panneaux actifs sur votre route</p>
+    <div style={{padding:20, fontFamily:'sans-serif'}}>
+      <h1>🚨 Bongono Chauffeur</h1>
+      <p style={{fontSize:12, background:'#eee', padding:8, borderRadius:8}}>{log}</p>
+      <p>{zones.length} panneaux actifs</p>
       
       <button 
-        onClick={toggleGuidage} 
-        style={{
-          padding:20, 
-          background: active ? '#28a745' : '#FF3B30', 
-          color:'white', 
-          border:'none', 
-          borderRadius:12, 
-          width:'100%', 
-          fontSize:18, 
-          fontWeight:'bold', 
-          marginTop:15
-        }}
+        onClick={() => {
+          // ON PARLE DIRECT DANS LE CLIC - C'EST LA CLÉ
+          if (!active) {
+            setActive(true)
+            parler('Bongono guidage, je vous guide tout au long de votre route, bonne route')
+          } else {
+            setActive(false)
+            window.speechSynthesis.cancel()
+            setLog('⏸️ Arrêté')
+          }
+        }} 
+        style={{padding:22, background: active ? '#28a745' : '#FF3B30', color:'white', border:'none', borderRadius:12, width:'100%', fontSize:18, fontWeight:'bold', marginTop:15}}
       >
-        {active ? '✅ GUIDAGE ACTIF - Cliquer pour arrêter' : '▶️ Démarrer le guidage'}
+        {active ? '✅ ACTIF - Re-clique pour couper' : '▶️ DÉMARRER LE GUIDAGE'}
       </button>
 
-      <div style={{marginTop:20}}>
-        <h3>Panneaux sur la route :</h3>
-        {zones.length === 0 && <p style={{color:'#999', fontSize:13}}>Aucun panneau pour le moment. Va dans l'admin pour en créer un.</p>}
-        {zones.map(z => (
-          <div key={z.id} style={{border:'1px solid #ddd', padding:12, borderRadius:10, marginBottom:10, background: active ? '#f0fff0' : 'white'}}>
-            <b>{z.type || 'Info'}</b><br/>
-            <span>{z.message}</span>
-          </div>
-        ))}
-      </div>
+      <button onClick={() => parler('Bongono')} style={{marginTop:12, padding:12, width:'100%', borderRadius:8}}>
+        🔊 TEST SIMPLE - Dire Bongono
+      </button>
     </div>
   )
-}
+                }
