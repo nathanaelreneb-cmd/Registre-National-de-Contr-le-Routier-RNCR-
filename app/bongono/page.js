@@ -1,8 +1,18 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@supabase/supabase-js'
+import dynamic from 'next/dynamic'
+
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+const MapView = dynamic(() => import('./MapView'), { ssr: false })
 
 export default function BongonoChauffeur() {
   const [active, setActive] = useState(false)
+  const [zones, setZones] = useState([])
+
+  useEffect(() => {
+    supabase.from('bongono_zones').select('*').eq('active', true).then(({data})=>{ if(data) setZones(data) })
+  }, [])
 
   function parler(texte) {
     window.speechSynthesis.cancel()
@@ -13,10 +23,9 @@ export default function BongonoChauffeur() {
   }
 
   return (
-    <div style={{padding:30, fontFamily:'sans-serif'}}>
+    <div style={{padding:15, maxWidth:600, margin:'0 auto'}}>
       <h1>🚨 Bongono Chauffeur</h1>
-      
-      <button 
+      <button
         onClick={() => {
           if (!active) {
             setActive(true)
@@ -25,11 +34,14 @@ export default function BongonoChauffeur() {
             setActive(false)
             window.speechSynthesis.cancel()
           }
-        }} 
-        style={{padding:22, background: active ? 'green' : 'red', color:'white', border:'none', borderRadius:12, width:'100%', fontSize:18, fontWeight:'bold'}}
+        }}
+        style={{padding:20, background: active? 'green' : 'red', color:'white', border:'none', borderRadius:12, width:'100%', fontSize:18, fontWeight:'bold'}}
       >
-        {active ? '✅ GUIDAGE ACTIF' : '▶️ DÉMARRER LE GUIDAGE'}
+        {active? '✅ GUIDAGE ACTIF' : '▶️ DÉMARRER LE GUIDAGE'}
       </button>
+
+      <p style={{marginTop:10, fontSize:13}}>{zones.length} panneaux sur la carte</p>
+      <MapView zones={zones} active={active} parler={parler} />
     </div>
   )
 }
