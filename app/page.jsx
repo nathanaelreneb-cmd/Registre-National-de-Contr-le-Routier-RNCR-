@@ -13,6 +13,7 @@ export default function Accueil() {
         </p>
 
         <Link href="/verifier" className="btn">Vérifier un engin</Link>
+        <Link href="/bongono" className="btn" style={{background:'#16a34a'}}>🛵 Bongono - Guidage Vocal</Link>
         <Link href="/citoyen/login" className="btn secondaire">Espace citoyen (mes véhicules)</Link>
         <Link href="/agent/login" className="btn secondaire">Espace agent</Link>
         <Link href="/admin/login" className="btn secondaire">Portail Administration</Link>
