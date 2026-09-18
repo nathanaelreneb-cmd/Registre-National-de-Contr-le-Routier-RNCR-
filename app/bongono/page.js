@@ -1,6 +1,6 @@
 "use client"
 import { useState } from 'react'
-import { demarrerGuidage } from '@/lib/bongono'
+import { demarrerGuidage } from '../../lib/bongono'
 
 export default function BongonoPage(){
   const [vitesse, setVitesse] = useState(0)
