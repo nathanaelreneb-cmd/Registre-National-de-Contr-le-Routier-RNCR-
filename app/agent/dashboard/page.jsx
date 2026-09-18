@@ -81,6 +81,13 @@ export default function TableauDeBord() {
         {role === 'responsable' && (
           <Link href="/agent/nouvel-agent" className="btn secondaire">Ajouter un agent</Link>
         )}
+        
+        {/* BOUTON BONGONO - NOUVEAU - VISIBLE SEULEMENT POUR RESPONSABLE */}
+        {role === 'responsable' && (
+          <Link href="/portail/responsable/bongono" className="btn" style={{ background: '#FF3B30', borderColor: '#FF3B30', marginTop: 12 }}>
+            🚨 BONGONO - Panneaux Virtuels
+          </Link>
+        )}
 
         <div className="divider" />
 
