@@ -42,7 +42,9 @@ export default function DetailEnginAdmin({ params }) {
   const [engin, setEngin] = useState(null);
   const [verifications, setVerifications] = useState([]);
   const [signalements, setSignalements] = useState([]);
-  const [transferts, setTransferts] = useState([]);\n  const [controlesTechniques, setControlesTechniques] = useState([]);\n  const [documentsConformite, setDocumentsConformite] = useState([]);
+  const [transferts, setTransferts] = useState([]);
+  const [controlesTechniques, setControlesTechniques] = useState([]);
+  const [documentsConformite, setDocumentsConformite] = useState([]);
 
   useEffect(() => {
     let actif = true;
@@ -116,7 +118,9 @@ export default function DetailEnginAdmin({ params }) {
 
     setVerifications(verifResult.data || []);
     setSignalements(signalementResult.data || []);
-    setTransferts(transfertResult.data || []);\n    setControlesTechniques(controleResult.data || []);\n    setDocumentsConformite(documentResult.data || []);
+    setTransferts(transfertResult.data || []);
+    setControlesTechniques(controleResult.data || []);
+    setDocumentsConformite(documentResult.data || []);
 
     const erreurs = [
       enginResult.error,
