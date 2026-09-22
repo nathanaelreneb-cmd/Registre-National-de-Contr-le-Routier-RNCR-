@@ -71,13 +71,21 @@ export default function TableauDeBord() {
         {badgeId && <p style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: 4 }}>Badge : {badgeId}</p>}
       </div>
       <div className="content">
+        <Link href="/agent/recherche" className="btn">🔎 Recherche nationale</Link>
         <Link href="/agent/nouveau" className="btn">Enregistrer un engin</Link>
+        <Link href="/agent/controle" className="btn">Contrôle routier</Link>
+        <Link href="/agent/conducteurs" className="btn">Dossier conducteur / permis</Link>
+        <Link href="/agent/infractions" className="btn">Infractions / procès-verbaux</Link>
+        <Link href="/agent/conformite-alertes" className="btn">Alertes conformité / expirations</Link>
         <Link href="/agent/scanner" className="btn secondaire">Scanner un QR code</Link>
         <Link href="/agent/suspect" className="btn secondaire">Signaler une moto suspecte</Link>
         <Link href="/agent/declarer-vol" className="btn secondaire">Déclarer un vol</Link>
         <Link href="/agent/transfert" className="btn secondaire">Transfert de propriété</Link>
         <Link href="/agent/signalements" className="btn secondaire">Signalements</Link>
         <Link href="/agent/historique" className="btn secondaire">Historique de mes scans</Link>
+        <Link href="/agent/accidents" className="btn secondaire">Enregistrer un accident</Link>
+        <Link href="/agent/historique-accidents" className="btn secondaire">Historique des accidents</Link>
+        {role !== 'agent' && <Link href="/agent/audit" className="btn secondaire">Journal d’audit</Link>}
         {role === 'responsable' && (
           <Link href="/agent/nouvel-agent" className="btn secondaire">Ajouter un agent</Link>
         )}

@@ -24,6 +24,21 @@ export async function POST(request) {
     return Response.json({ erreur: 'Session invalide. Reconnectez-vous.' }, { status: 401 });
   }
 
+  const { data: agentDemandeur, error: erreurAgentDemandeur } = await supabaseAdmin
+    .from('agents')
+    .select('role, actif')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (
+    erreurAgentDemandeur ||
+    !agentDemandeur ||
+    agentDemandeur.actif === false ||
+    !['admin', 'responsable', 'responsable_regional'].includes(agentDemandeur.role)
+  ) {
+    return Response.json({ erreur: "Vous n'avez pas les droits pour créer un agent." }, { status: 403 });
+  }
+
   const body = await request.json();
   const { nom, telephone, email, motDePasse } = body;
 
