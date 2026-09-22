@@ -1,0 +1,39 @@
+'use client';
+
+import { useEffect,useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { supabase } from '../../../../../lib/supabaseClient';
+
+function d(v){return v?new Date(v).toLocaleString('fr-FR'):'—';}
+export default function HistoriqueEngin({params}){
+ const {id}=params;const router=useRouter();const [ok,setOk]=useState(null);const [loading,setLoading]=useState(true);const [e,setE]=useState(null);const [data,setData]=useState(null);
+ useEffect(()=>{(async()=>{const {data:s}=await supabase.auth.getSession();if(!s.session)return router.push('/agent/login');const {data:a}=await supabase.from('agents').select('role,actif').eq('user_id',s.session.user.id).maybeSingle();if(!a?.actif||!['agent','responsable','responsable_regional','admin'].includes(a.role))return router.push('/agent/login');setOk(true);
+ const {data:eng}=await supabase.from('engins').select('id,qr_code,plaque,type_engin,marque,modele,numero_chassis,proprietaire_nom,proprietaire_telephone,proprietaire_cni,statut,statut_fiscal,assurance_expiration').eq('id',id).maybeSingle();if(!eng){setLoading(false);return;}
+ const [{data:verif},{data:sig},{data:pv},{data:trans},{data:tech},{data:docs},{data:liens}]=await Promise.all([
+ supabase.from('verifications').select('id,resultat,lieu,via_public,created_at,agent_id').eq('engin_id',id).order('created_at',{ascending:false}).limit(200),
+ supabase.from('signalements').select('id,type,lieu,personne_trouvee,statut,resolu_at,created_at,agent_id').eq('engin_id',id).order('created_at',{ascending:false}).limit(200),
+ supabase.from('infractions').select('id,numero_pv,date_heure,lieu,type_infraction,montant,statut,points_retires,conducteur_id').eq('engin_id',id).order('date_heure',{ascending:false}).limit(200),
+ supabase.from('transferts_propriete').select('id,ancien_proprietaire_nom,nouveau_proprietaire_nom,nouveau_proprietaire_cni,created_at,agent_id').eq('engin_id',id).order('created_at',{ascending:false}).limit(100),
+ supabase.from('controles_techniques').select('id,date_controle,date_expiration,centre_controle,reference_controle,resultat,observations,preuve_url,created_at').eq('engin_id',id).order('date_controle',{ascending:false}).limit(100),
+ supabase.from('engins_documents').select('id,type_document,numero_document,date_delivrance,date_expiration,autorite,statut,observations,preuve_url,created_at').eq('engin_id',id).order('created_at',{ascending:false}).limit(100),
+ supabase.from('conducteur_engins').select('conducteur_id,est_principal,date_debut,date_fin,created_at').eq('engin_id',id).order('created_at',{ascending:false}).limit(100)
+ ]);
+ const cids=[...(liens||[]).map(x=>x.conducteur_id),...(pv||[]).map(x=>x.conducteur_id)].filter(Boolean);let conducteurs=[];if(cids.length){const r=await supabase.from('conducteurs').select('id,nom,prenom,numero_cni').in('id',[...new Set(cids)]);conducteurs=r.data||[];}
+ const accLinks=await supabase.from('accident_engins').select('accident_id,plaque,role_dans_accident').eq('engin_id',id);let accidents=[];if((accLinks.data||[]).length){const r=await supabase.from('accidents').select('id,numero_dossier,date_heure,lieu,type_accident,gravite,statut_enquete').in('id',accLinks.data.map(x=>x.accident_id)).order('date_heure',{ascending:false});accidents=r.data||[];}
+ setE(eng);setData({verif:verif||[],sig:sig||[],pv:pv||[],trans:trans||[],tech:tech||[],docs:docs||[],liens:liens||[],conducteurs,accidents});setLoading(false);})();},[id]);
+ if(ok===null||loading)return <div className="shell"><div className="content"><p>Chargement…</p></div></div>;
+ if(!e)return <div className="shell"><div className="content"><p>Engin introuvable.</p></div></div>;
+ const nomC=(id)=>{const c=data.conducteurs.find(x=>x.id===id);return c?c.nom+' '+(c.prenom||''):id?.slice(0,8)||'—'};
+ return <div className="shell" style={{maxWidth:920}}><div className="header"><button onClick={()=>router.back()} className="btn secondaire" style={{width:'auto',marginBottom:12}}>← Retour</button><p className="sigle">Registre national</p><h1>Historique — {e.plaque||e.qr_code}</h1><p style={{color:'var(--ink-soft)'}}>Historique administratif, contrôles, PV, signalements et accidents.</p></div><div className="content">
+ <section><h2>Identité de l’engin</h2><dl className="fiche-info"><dt>QR</dt><dd>{e.qr_code}</dd><dt>Plaque</dt><dd>{e.plaque||'—'}</dd><dt>Châssis</dt><dd>{e.numero_chassis||'—'}</dd><dt>Type</dt><dd>{e.type_engin}</dd><dt>Marque / modèle</dt><dd>{e.marque} {e.modele}</dd><dt>Propriétaire</dt><dd>{e.proprietaire_nom||'—'}</dd><dt>Statut</dt><dd>{e.statut||'—'}</dd><dt>Fiscalité</dt><dd>{e.statut_fiscal||'—'}</dd><dt>Assurance</dt><dd>{e.assurance_expiration||'—'}</dd></dl></section><div className="divider"/>
+ <section><h2>Conducteurs associés ({data.conducteurs.length})</h2>{data.conducteurs.length?data.conducteurs.map(c=><Link key={c.id} href={'/agent/conducteurs/'+c.id} className="liste-item" style={{display:'block'}}><strong>{c.nom} {c.prenom||''}</strong><div className="meta">CNI : {c.numero_cni||'—'}</div></Link>):<p>Aucun conducteur associé.</p>}</section><div className="divider"/>
+ <section><h2>Contrôles techniques ({data.tech.length})</h2>{data.tech.length?data.tech.map(x=><div className="liste-item" key={x.id}><strong>{x.resultat}</strong> · {x.date_controle||'—'} · expiration {x.date_expiration||'—'}<div className="meta">{x.centre_controle||'Centre non renseigné'} · réf. {x.reference_controle||'—'}</div></div>):<p>Aucun contrôle.</p>}</section><div className="divider"/>
+ <section><h2>Documents ({data.docs.length})</h2>{data.docs.length?data.docs.map(x=><div className="liste-item" key={x.id}><strong>{x.type_document}</strong> · {x.statut}<div className="meta">{x.numero_document||'—'} · expiration {x.date_expiration||'—'} · {x.autorite||'—'}</div></div>):<p>Aucun document.</p>}</section><div className="divider"/>
+ <section><h2>Procès-verbaux ({data.pv.length})</h2>{data.pv.length?data.pv.map(x=><div className="liste-item" key={x.id}><strong>{x.numero_pv}</strong> · {x.type_infraction}<div className="meta">{d(x.date_heure)} · {x.lieu||'—'} · {x.statut} · points {x.points_retires||0}</div>{x.conducteur_id&&<div className="meta">Conducteur : {nomC(x.conducteur_id)}</div>}</div>):<p>Aucun PV.</p>}</section><div className="divider"/>
+ <section><h2>Vérifications ({data.verif.length})</h2>{data.verif.length?data.verif.map(x=><div className="liste-item" key={x.id}><strong>{x.resultat}</strong> · {d(x.created_at)}<div className="meta">{x.lieu||'Lieu non renseigné'} · {x.via_public?'Vérification publique':'Contrôle agent'}</div></div>):<p>Aucune vérification.</p>}</section><div className="divider"/>
+ <section><h2>Signalements ({data.sig.length})</h2>{data.sig.length?data.sig.map(x=><div className="liste-item" key={x.id)}><strong>{x.type}</strong> · {x.statut}<div className="meta">{d(x.created_at)} · {x.lieu||'—'}{x.resolu_at?' · résolu '+d(x.resolu_at):''}</div></div>):<p>Aucun signalement.</p>}</section><div className="divider"/>
+ <section><h2>Transferts de propriété ({data.trans.length})</h2>{data.trans.length?data.trans.map(x=><div className="liste-item" key={x.id}><strong>{x.ancien_proprietaire_nom||'—'} → {x.nouveau_proprietaire_nom||'—'}</strong><div className="meta">{d(x.created_at)} · nouveau CNI : {x.nouveau_proprietaire_cni||'—'}</div></div>):<p>Aucun transfert enregistré.</p>}</section><div className="divider"/>
+ <section><h2>Accidents ({data.accidents.length})</h2>{data.accidents.length?data.accidents.map(x=><Link key={x.id} href={'/agent/accidents/'+x.id} className="liste-item" style={{display:'block'}}><strong>{x.numero_dossier||x.id.slice(0,8)}</strong> · {x.type_accident} · {x.gravite}<div className="meta">{d(x.date_heure)} · {x.lieu} · enquête : {x.statut_enquete}</div></Link>):<p>Aucun accident.</p>}</section>
+ </div></div>;
+}
