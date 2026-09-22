@@ -77,7 +77,7 @@ export default function TableauDeBord() {
         <Link href="/agent/declarer-vol" className="btn secondaire">Déclarer un vol</Link>
         <Link href="/agent/transfert" className="btn secondaire">Transfert de propriété</Link>
         <Link href="/agent/signalements" className="btn secondaire">Signalements</Link>
-        <Link href="/agent/historique" className="btn secondaire">Historique de mes scans</Link>
+        <Link href="/agent/historique" className="btn secondaire">Historique de mes scans</Link>\n        <Link href="/agent/accidents" className="btn secondaire">Enregistrer un accident</Link>\n        <Link href="/agent/historique-accidents" className="btn secondaire">Historique des accidents</Link>
         {role === 'responsable' && (
           <Link href="/agent/nouvel-agent" className="btn secondaire">Ajouter un agent</Link>
         )}
