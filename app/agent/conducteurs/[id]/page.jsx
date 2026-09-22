@@ -78,7 +78,7 @@ export default function DossierConducteur({ params }) {
         <button className="btn" disabled={saving}>{saving?'Enregistrement…':'Enregistrer le permis'}</button>
       </form></section>
       <div className="divider"/>
-      <section><h2>4. Engins associés ({engins.length})</h2>
+      <section><h2>4. Engins associés ({engins.length})</h2><Link href={`/agent/conducteurs/${id}/historique`} className="btn secondaire">Voir l’historique complet du conducteur</Link>
         <form onSubmit={rechercherEngins}>
           <div className="field"><label>Associer un engin (plaque, châssis ou QR)</label><input value={enginRecherche} onChange={e=>setEnginRecherche(e.target.value.slice(0,60))} placeholder="Ex. NO-073-A08 ou RNCR-..." /></div>
           <button className="btn secondaire" disabled={!enginRecherche.trim()}>Rechercher un engin</button>
