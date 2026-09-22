@@ -36,6 +36,7 @@ export default function HistoriqueAccidents() {
       <span className="plaque">{a.numero_dossier}</span> <span className={`badge ${a.gravite}`}>{GRAVITES[a.gravite]||a.gravite}</span>
       <div className="meta">{date(a.date_heure)} — {a.lieu}</div>
       <div className="meta">Décès: {a.nombre_deces} · Blessés graves: {a.nombre_blesses_graves} · Blessés légers: {a.nombre_blesses_legers}</div>
+      <Link href={"/agent/accidents/"+a.id} className="btn secondaire" style={{marginTop:8}}>Ouvrir le dossier</Link>
     </div>)}
   </div></div>;
 }
