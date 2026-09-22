@@ -14,7 +14,7 @@ export default function DossierConducteur({ params }) {
   const [autorise,setAutorise]=useState(null); const [chargement,setChargement]=useState(true); const [erreur,setErreur]=useState('');
   const [conducteur,setConducteur]=useState(null); const [permis,setPermis]=useState([]); const [engins,setEngins]=useState([]);
   const [form,setForm]=useState({numero_permis:'',date_delivrance:'',date_expiration:'',autorite_delivrance:'',categories:'',restrictions:''});
-  const [saving,setSaving]=useState(false);
+  const [saving,setSaving]=useState(false); const [enginRecherche,setEnginRecherche]=useState(''); const [enginsTrouves,setEnginsTrouves]=useState([]); const [association,setAssociation]=useState(false);
 
   async function charger(){
     setChargement(true);
@@ -32,7 +32,7 @@ export default function DossierConducteur({ params }) {
 
   useEffect(()=>{(async()=>{const {data}=await supabase.auth.getSession(); if(!data.session)return router.push('/agent/login'); const {data:a}=await supabase.from('agents').select('role,actif').eq('user_id',data.session.user.id).maybeSingle(); if(!a?.actif || !['agent','responsable','responsable_regional','admin'].includes(a.role))return router.push('/agent/login'); setAutorise(true); await charger();})();},[id]);
 
-  async function ajouterPermis(e){
+  async function rechercherEngins(e){\n    e?.preventDefault(); const t=enginRecherche.trim().slice(0,60); if(!t)return;\n    const [p,c,q]=await Promise.all([supabase.from('engins').select('id,plaque,numero_chassis,type_engin,marque,modele').ilike('plaque',\`%${t}%\`).limit(20),supabase.from('engins').select('id,plaque,numero_chassis,type_engin,marque,modele').ilike('numero_chassis',\`%${t}%\`).limit(20),supabase.from('engins').select('id,plaque,numero_chassis,type_engin,marque,modele').ilike('qr_code',\`%${t}%\`).limit(20)]);\n    const m=new Map(); [p.data,c.data,q.data].flat().filter(Boolean).forEach(x=>m.set(x.id,x)); setEnginsTrouves([...m.values()]);\n  }\n\n  async function associerEngin(enginId){\n    setAssociation(true); setErreur(''); const {error}=await supabase.from('conducteur_engins').insert({conducteur_id:id,engin_id:enginId,est_principal:engins.length===0});\n    setAssociation(false); if(error && error.code!=='23505'){setErreur('Impossible d’associer cet engin au conducteur.');return;} await charger(); setEnginsTrouves([]); setEnginRecherche('');\n  }\n\n  async function ajouterPermis(e){
     e.preventDefault(); setErreur('');
     if(!form.numero_permis.trim()) return setErreur('Le numéro du permis est obligatoire.');
     setSaving(true);
@@ -78,7 +78,13 @@ export default function DossierConducteur({ params }) {
         <button className="btn" disabled={saving}>{saving?'Enregistrement…':'Enregistrer le permis'}</button>
       </form></section>
       <div className="divider"/>
-      <section><h2>4. Engins associés ({engins.length})</h2>{engins.length?engins.map(e=><Link key={e.id} href={`/agent/fiche/${e.id}`} className="liste-item" style={{display:'block'}}><strong>{e.plaque||'Sans plaque'}</strong><div className="meta">{e.type_engin} • {e.marque} {e.modele} • {e.statut}</div></Link>):<p style={{color:'var(--ink-soft)'}}>Aucun engin associé.</p>}</section>
+      <section><h2>4. Engins associés ({engins.length})</h2>
+        <form onSubmit={rechercherEngins}>
+          <div className="field"><label>Associer un engin (plaque, châssis ou QR)</label><input value={enginRecherche} onChange={e=>setEnginRecherche(e.target.value.slice(0,60))} placeholder="Ex. NO-073-A08 ou RNCR-..." /></div>
+          <button className="btn secondaire" disabled={!enginRecherche.trim()}>Rechercher un engin</button>
+        </form>
+        {enginsTrouves.map(e=><div key={e.id} className="liste-item"><strong>{e.plaque||'Sans plaque'}</strong><div className="meta">{e.type_engin} • {e.marque} {e.modele} • châssis {e.numero_chassis||'—'}</div><button type="button" className="btn" onClick={()=>associerEngin(e.id)} disabled={association}>Associer au conducteur</button></div>)}
+        {engins.length?engins.map(e=><Link key={e.id} href={`/agent/fiche/${e.id}`} className="liste-item" style={{display:'block'}}><strong>{e.plaque||'Sans plaque'}</strong><div className="meta">{e.type_engin} • {e.marque} {e.modele} • {e.statut}</div></Link>):<p style={{color:'var(--ink-soft)'}}>Aucun engin associé.</p>}</section>
     </div>
   </div>;
 }
