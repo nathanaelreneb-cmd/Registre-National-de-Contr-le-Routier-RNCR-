@@ -34,7 +34,14 @@ export async function POST(request) {
   });
 
   if (erreurCreation) {
-    return Response.json({ erreur: 'Impossible de créer le compte.' }, { status: 400 });
+    console.error('Erreur création compte citoyen:', erreurCreation);
+
+    const message = String(erreurCreation.message || '').toLowerCase();
+    if (erreurCreation.code === 'email_exists' || message.includes('already been registered') || message.includes('already registered')) {
+      return Response.json({ erreur: 'Cette adresse email est déjà utilisée. Connectez-vous ou utilisez une autre adresse.' }, { status: 409 });
+    }
+
+    return Response.json({ erreur: 'Impossible de créer le compte. Vérifiez les informations saisies et réessayez.' }, { status: 400 });
   }
 
   const { error: erreurProfil } = await supabaseAdmin.from('citoyens').insert({
@@ -45,9 +52,10 @@ export async function POST(request) {
   });
 
   if (erreurProfil) {
+    console.error('Erreur création profil citoyen:', erreurProfil);
     await supabaseAdmin.auth.admin.deleteUser(nouvelUtilisateur.user.id);
     return Response.json(
-      { erreur: "Impossible d'enregistrer le profil citoyen." },
+      { erreur: "Impossible d'enregistrer le profil citoyen. Vérifiez les informations puis réessayez." },
       { status: 500 }
     );
   }
