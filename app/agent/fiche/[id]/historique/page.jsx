@@ -23,6 +23,17 @@ export default function HistoriqueEngin({params}){
  const accLinks=await supabase.from('accident_engins').select('accident_id,plaque,role_dans_accident').eq('engin_id',id);let accidents=[];if((accLinks.data||[]).length){const r=await supabase.from('accidents').select('id,numero_dossier,date_heure,lieu,type_accident,gravite,statut_enquete').in('id',accLinks.data.map(x=>x.accident_id)).order('date_heure',{ascending:false});accidents=r.data||[];}
  setE(eng);setData({verif:verif||[],sig:sig||[],pv:pv||[],trans:trans||[],tech:tech||[],docs:docs||[],liens:liens||[],conducteurs,accidents});setLoading(false);})();},[id]);
  if(ok===null||loading)return <div className="shell"><div className="content"><p>Chargement…</p></div></div>;
+ const [filtre,setFiltre]=useState('tous'); const [du,setDu]=useState(''); const [au,setAu]=useState('');
+ const timeline=[
+  ...data.tech.map(x=>({id:'tech-'+x.id,date:x.date_controle||x.created_at,type:'controle',titre:'Contrôle technique',detail:(x.resultat||'—')+' · '+(x.centre_controle||'Centre non renseigné'),meta:'Expiration : '+(x.date_expiration||'—')})),
+  ...data.docs.map(x=>({id:'doc-'+x.id,date:x.created_at||x.date_delivrance,type:'document',titre:'Document '+(x.type_document||''),detail:(x.numero_document||'Sans numéro')+' · '+(x.statut||'—'),meta:'Expiration : '+(x.date_expiration||'—')})),
+  ...data.pv.map(x=>({id:'pv-'+x.id,date:x.date_heure,type:'pv',titre:'Procès-verbal '+(x.numero_pv||''),detail:x.type_infraction||'Infraction',meta:(x.lieu||'Lieu non renseigné')+' · '+(x.statut||'—')})),
+  ...data.verif.map(x=>({id:'verif-'+x.id,date:x.created_at,type:'verification',titre:'Vérification',detail:x.resultat||'—',meta:(x.via_public?'Vérification publique':'Contrôle agent')+' · '+(x.lieu||'Lieu non renseigné')})),
+  ...data.sig.map(x=>({id:'sig-'+x.id,date:x.created_at,type:'signalement',titre:'Signalement '+(x.type||''),detail:x.statut||'—',meta:x.lieu||'Lieu non renseigné'})),
+  ...data.trans.map(x=>({id:'trans-'+x.id,date:x.created_at,type:'transfert',titre:'Transfert de propriété',detail:(x.ancien_proprietaire_nom||'—')+' → '+(x.nouveau_proprietaire_nom||'—'),meta:'Nouveau CNI : '+(x.nouveau_proprietaire_cni||'—')})),
+  ...data.accidents.map(x=>({id:'acc-'+x.id,date:x.date_heure,type:'accident',titre:'Accident '+(x.numero_dossier||x.id.slice(0,8)),detail:(x.type_accident||'—')+' · '+(x.gravite||'—'),meta:(x.lieu||'Lieu non renseigné')+' · enquête : '+(x.statut_enquete||'—')}))
+ ].filter(x=>x.date).sort((a,b)=>new Date(b.date)-new Date(a.date));
+ const timelineFiltrée=timeline.filter(x=>{if(filtre!=='tous'&&x.type!==filtre)return false;const dt=new Date(x.date);if(du&&dt<new Date(du+'T00:00:00'))return false;if(au&&dt>new Date(au+'T23:59:59'))return false;return true;});
  if(!e)return <div className="shell"><div className="content"><p>Engin introuvable.</p></div></div>;
  const nomC=(id)=>{const c=data.conducteurs.find(x=>x.id===id);return c?c.nom+' '+(c.prenom||''):id?.slice(0,8)||'—'};
  return <div className="shell" style={{maxWidth:920}}><div className="header"><button onClick={()=>router.back()} className="btn secondaire" style={{width:'auto',marginBottom:12}}>← Retour</button><p className="sigle">Registre national</p><h1>Historique — {e.plaque||e.qr_code}</h1><p style={{color:'var(--ink-soft)'}}>Historique administratif, contrôles, PV, signalements et accidents.</p></div><div className="content">
