@@ -16,6 +16,14 @@ export default function HistoriqueConducteur({params}){
  const accIds=(accPers||[]).map(x=>x.accident_id); let accidents=[]; if(accIds.length){const r=await supabase.from('accidents').select('id,numero_dossier,date_heure,lieu,type_accident,gravite,statut_enquete').in('id',accIds).order('date_heure',{ascending:false});accidents=r.data||[];}
  setData({c,permis:permis||[],liens:liens||[],engins,pv:pv||[],accidents});setLoading(false);})();},[id]);
  if(ok===null||loading)return <div className="shell"><div className="content"><p>Chargement…</p></div></div>;
+ const [filtre,setFiltre]=useState('tous'); const [du,setDu]=useState(''); const [au,setAu]=useState('');
+ const timeline=[
+  ...data.permis.map(x=>({id:'permis-'+x.id,date:x.created_at,type:'permis',titre:'Permis de conduire',detail:(x.numero_permis||'—')+' · '+(x.statut||'—'),meta:'Expiration : '+(x.date_expiration||'—')})),
+  ...data.liens.map(x=>({id:'lien-'+x.engin_id,date:x.created_at,type:'engin',titre:'Association conducteur ↔ engin',detail:x.engin_id.slice(0,8),meta:(x.est_principal?'Conducteur principal · ':'')+(x.date_debut||'')+(x.date_fin?' → '+x.date_fin:'' )})),
+  ...data.pv.map(x=>({id:'pv-'+x.id,date:x.date_heure,type:'pv',titre:'Procès-verbal '+(x.numero_pv||''),detail:x.type_infraction||'Infraction',meta:(x.lieu||'Lieu non renseigné')+' · statut '+(x.statut||'—')})),
+  ...data.accidents.map(x=>({id:'acc-'+x.id,date:x.date_heure,type:'accident',titre:'Accident '+(x.numero_dossier||x.id.slice(0,8)),detail:(x.type_accident||'—')+' · '+(x.gravite||'—'),meta:(x.lieu||'Lieu non renseigné')+' · enquête : '+(x.statut_enquete||'—')}))
+ ].filter(x=>x.date).sort((a,b)=>new Date(b.date)-new Date(a.date));
+ const timelineFiltrée=timeline.filter(x=>{if(filtre!=='tous'&&x.type!==filtre)return false;const dt=new Date(x.date);if(du&&dt<new Date(du+'T00:00:00'))return false;if(au&&dt>new Date(au+'T23:59:59'))return false;return true;});
  if(err)return <div className="shell"><div className="content"><p>{err}</p></div></div>;
  return <div className="shell" style={{maxWidth:900}}><div className="header"><button onClick={()=>router.back()} className="btn secondaire" style={{width:'auto',marginBottom:12}}>← Retour</button><p className="sigle">Registre national</p><h1>Historique — {data.c.nom} {data.c.prenom||''}</h1><p style={{color:'var(--ink-soft)'}}>Vue chronologique des événements rattachés au dossier conducteur.</p></div><div className="content">
  <section><h2>Résumé</h2><div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:10}}><div className="liste-item">Permis : <strong>{data.permis.length}</strong></div><div className="liste-item">Engins associés : <strong>{data.engins.length}</strong></div><div className="liste-item">PV : <strong>{data.pv.length}</strong></div><div className="liste-item">Accidents retrouvés : <strong>{data.accidents.length}</strong></div></div></section><div className="divider"/>
