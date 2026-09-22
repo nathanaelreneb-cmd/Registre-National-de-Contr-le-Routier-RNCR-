@@ -88,7 +88,7 @@ export default function ConformiteEngin({ params }) {
 
       const [enginResult, controlesResult, documentsResult] = await Promise.all([
         supabase.from('engins').select('id, qr_code, plaque, type_engin, marque, modele, assurance_expiration, statut_fiscal').eq('id', id).maybeSingle(),
-        supabase.from('controles_techniques').select('id, date_controle, date_expiration, centre_controle, reference_controle, resultat, observations, agent_id, created_at').eq('engin_id', id).order('date_controle', { ascending: false }).limit(50),
+        supabase.from('controles_techniques').select('id, date_controle, date_expiration, centre_controle, reference_controle, resultat, observations, preuve_url, agent_id, created_at').eq('engin_id', id).order('date_controle', { ascending: false }).limit(50),
         supabase.from('engins_documents').select('id, type_document, numero_document, date_delivrance, date_expiration, autorite, statut, preuve_url, observations, verifie_par, verifie_at, created_at').eq('engin_id', id).order('created_at', { ascending: false }).limit(50),
       ]);
 
@@ -139,11 +139,36 @@ export default function ConformiteEngin({ params }) {
       observations: '',
     });
 
-    const { data } = await supabase.from('controles_techniques').select('id, date_controle, date_expiration, centre_controle, reference_controle, resultat, observations, agent_id, created_at').eq('engin_id', id).order('date_controle', { ascending: false }).limit(50);
+    const { data } = await supabase.from('controles_techniques').select('id, date_controle, date_expiration, centre_controle, reference_controle, resultat, observations, preuve_url, agent_id, created_at').eq('engin_id', id).order('date_controle', { ascending: false }).limit(50);
     setControles(data || []);
   }
 
-  async function ajouterPreuve(documentId, file) {\n    if (!file) return;\n    setErreur('');\n    setMessage('');\n    const types = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];\n    if (!types.includes(file.type)) { setErreur('Format refusé. Utilisez JPG, PNG, WebP ou PDF.'); return; }\n    if (file.size > 5 * 1024 * 1024) { setErreur('Le fichier ne doit pas dépasser 5 Mo.'); return; }\n    setTeleversement(true);\n    const extension = file.name.split('.').pop()?.toLowerCase() || 'bin';\n    const path = `${id}/${documentId}-${crypto.randomUUID()}.${extension}`;\n    const { error: uploadError } = await supabase.storage.from('engins-conformite').upload(path, file, { upsert: false, contentType: file.type });\n    if (uploadError) { setErreur(uploadError.message); setTeleversement(false); return; }\n    const { error: dbError } = await supabase.from('engins_documents').update({ preuve_url: path, updated_at: new Date().toISOString() }).eq('id', documentId);\n    if (dbError) { await supabase.storage.from('engins-conformite').remove([path]); setErreur(dbError.message); setTeleversement(false); return; }\n    setDocuments((prev) => prev.map((d) => d.id === documentId ? { ...d, preuve_url: path } : d));\n    setMessage('Preuve enregistrée de façon sécurisée.');\n    setTeleversement(false);\n  }\n\n  async function ouvrirPreuve(path) {\n    const { data, error } = await supabase.storage.from('engins-conformite').createSignedUrl(path, 300);\n    if (error) { setErreur(error.message); return; }\n    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');\n  }\n\n  async function ajouterDocument(e) {
+  async function ajouterPreuve(documentId, file) {\n    if (!file) return;\n    setErreur('');\n    setMessage('');\n    const types = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];\n    if (!types.includes(file.type)) { setErreur('Format refusé. Utilisez JPG, PNG, WebP ou PDF.'); return; }\n    if (file.size > 5 * 1024 * 1024) { setErreur('Le fichier ne doit pas dépasser 5 Mo.'); return; }\n    setTeleversement(true);\n    const extension = file.name.split('.').pop()?.toLowerCase() || 'bin';\n    const path = `${id}/${documentId}-${crypto.randomUUID()}.${extension}`;\n    const { error: uploadError } = await supabase.storage.from('engins-conformite').upload(path, file, { upsert: false, contentType: file.type });\n    if (uploadError) { setErreur(uploadError.message); setTeleversement(false); return; }\n    const { error: dbError } = await supabase.from('engins_documents').update({ preuve_url: path, updated_at: new Date().toISOString() }).eq('id', documentId);\n    if (dbError) { await supabase.storage.from('engins-conformite').remove([path]); setErreur(dbError.message); setTeleversement(false); return; }\n    setDocuments((prev) => prev.map((d) => d.id === documentId ? { ...d, preuve_url: path } : d));\n    setMessage('Preuve enregistrée de façon sécurisée.');\n    setTeleversement(false);\n  }\n\n  async function ouvrirPreuve(path) {\n    const { data, error } = await supabase.storage.from('engins-conformite').createSignedUrl(path, 300);\n    if (error) { setErreur(error.message); return; }\n    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');\n  }\n\n  async function ajouterPreuveControle(controleId, file) {
+    if (!file) return;
+    setErreur('');
+    setMessage('');
+    const types = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!types.includes(file.type)) { setErreur('Format refusé. Utilisez JPG, PNG, WebP ou PDF.'); return; }
+    if (file.size > 5 * 1024 * 1024) { setErreur('Le fichier ne doit pas dépasser 5 Mo.'); return; }
+    setTeleversement(true);
+    const extension = file.name.split('.').pop()?.toLowerCase() || 'bin';
+    const path = \`${id}/controle-${controleId}-${crypto.randomUUID()}.${extension}\`;
+    const { error: uploadError } = await supabase.storage.from('engins-conformite').upload(path, file, { upsert: false, contentType: file.type });
+    if (uploadError) { setErreur(uploadError.message); setTeleversement(false); return; }
+    const { error: dbError } = await supabase.from('controles_techniques').update({ preuve_url: path }).eq('id', controleId);
+    if (dbError) { await supabase.storage.from('engins-conformite').remove([path]); setErreur(dbError.message); setTeleversement(false); return; }
+    setControles(prev => prev.map(c => c.id === controleId ? { ...c, preuve_url: path } : c));
+    setMessage('Preuve du contrôle technique enregistrée.');
+    setTeleversement(false);
+  }
+
+  async function ouvrirPreuveControle(path) {
+    const { data, error } = await supabase.storage.from('engins-conformite').createSignedUrl(path, 300);
+    if (error) { setErreur(error.message); return; }
+    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  async function ajouterDocument(e) {
     e.preventDefault();
     setErreur('');
     setMessage('');
@@ -226,6 +251,10 @@ export default function ConformiteEngin({ params }) {
               {c.centre_controle && <div className="meta">Centre : {c.centre_controle}</div>}
               {c.reference_controle && <div className="meta">Référence : {c.reference_controle}</div>}
               {c.observations && <div className="meta">{c.observations}</div>}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                {c.preuve_url ? <button type="button" className="btn secondaire" onClick={() => ouvrirPreuveControle(c.preuve_url)}>Voir la preuve (lien 5 min)</button> : null}
+                <label className="btn secondaire" style={{ cursor: televersement ? 'wait' : 'pointer' }}>Ajouter une preuve<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" disabled={televersement} onChange={e => { const file=e.target.files?.[0]; e.target.value=''; ajouterPreuveControle(c.id,file); }} style={{ display: 'none' }} /></label>
+              </div>
             </div>
           ))}
         </section>
