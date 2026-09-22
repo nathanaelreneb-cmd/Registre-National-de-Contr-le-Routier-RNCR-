@@ -112,7 +112,7 @@ export default function FicheEngin({ params }) {
         </dl>
 
         <div className="divider no-print" />
-        <div className="no-print" style={{ display: 'grid', gap: 10 }}>
+        <div className="no-print" style={{ display: 'grid', gap: 10 }}><a href={`/agent/fiche/${engin.id}/historique`} className="btn secondaire">Voir l’historique complet de l’engin</a>
           <a href={`/agent/conformite/${engin.id}`} className="btn secondaire">Contrôle technique & documents de conformité</a>
           <button onClick={() => window.print()} className="btn secondaire">Imprimer la fiche</button>
         </div>
