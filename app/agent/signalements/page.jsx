@@ -21,6 +21,7 @@ export default function Signalements() {
   const [role, setRole] = useState(null);
   const [signalements, setSignalements] = useState([]);
   const [chargement, setChargement] = useState(true);
+  const [photos, setPhotos] = useState({});
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -48,7 +49,18 @@ export default function Signalements() {
       .select('id, engin_id, type, lieu, personne_trouvee, statut, photo_url, created_at, engins(plaque, marque, modele, statut)')
       .order('created_at', { ascending: false })
       .limit(50);
-    setSignalements(data || []);
+    const rows = data || [];
+    setSignalements(rows);
+    const paths = rows.map((s) => s.photo_url).filter(Boolean).filter((p) => !p.startsWith('http'));
+    const signed = {};
+    if (paths.length) {
+      const results = await Promise.all(paths.map(async (path) => {
+        const { data: signedData } = await supabase.storage.from('signalements').createSignedUrl(path, 300);
+        return [path, signedData?.signedUrl || null];
+      }));
+      for (const [path, url] of results) signed[path] = url;
+    }
+    setPhotos(signed);
     setChargement(false);
   }
 
@@ -105,9 +117,11 @@ export default function Signalements() {
             </div>
             {s.photo_url && (
               <div style={{ marginTop: 8 }}>
-                <a href={s.photo_url} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--brand)' }}>
-                  Voir la photo
-                </a>
+                {photos[s.photo_url] ? (
+                  <a href={photos[s.photo_url]} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--brand)' }}>
+                    Voir la photo
+                  </a>
+                ) : <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>Photo indisponible ou accès expiré</span>}
               </div>
             )}
 
