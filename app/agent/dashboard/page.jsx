@@ -73,6 +73,7 @@ export default function TableauDeBord() {
       <div className="content">
         <Link href="/agent/nouveau" className="btn">Enregistrer un engin</Link>
         <Link href="/agent/controle" className="btn">Contrôle routier</Link>
+        <Link href="/agent/conducteurs" className="btn">Dossier conducteur / permis</Link>
         <Link href="/agent/scanner" className="btn secondaire">Scanner un QR code</Link>
         <Link href="/agent/suspect" className="btn secondaire">Signaler une moto suspecte</Link>
         <Link href="/agent/declarer-vol" className="btn secondaire">Déclarer un vol</Link>
