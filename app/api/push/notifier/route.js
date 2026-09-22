@@ -28,7 +28,12 @@ export async function POST(request) {
     return Response.json({ erreur: 'Non autorisé.' }, { status: 401 });
   }
 
-  let body;\n  try { body = await request.json(); } catch { return Response.json({ erreur: 'Requête JSON invalide.' }, { status: 400 }); }\n  const { type } = body || {};\n  if (!['signalement', 'sos'].includes(type)) {\n    return Response.json({ erreur: 'Type de notification invalide.' }, { status: 400 });\n  }
+  let body;
+  try { body = await request.json(); } catch { return Response.json({ erreur: 'Requête JSON invalide.' }, { status: 400 }); }
+  const { type } = body || {};
+  if (!['signalement', 'sos'].includes(type)) {
+    return Response.json({ erreur: 'Type de notification invalide.' }, { status: 400 });
+  }
 
   const { data: abonnements } = await supabaseAdmin.from('push_subscriptions').select('*');
 
