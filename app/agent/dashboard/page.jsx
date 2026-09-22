@@ -71,6 +71,7 @@ export default function TableauDeBord() {
         {badgeId && <p style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: 4 }}>Badge : {badgeId}</p>}
       </div>
       <div className="content">
+        <Link href="/agent/recherche" className="btn">🔎 Recherche nationale</Link>
         <Link href="/agent/nouveau" className="btn">Enregistrer un engin</Link>
         <Link href="/agent/controle" className="btn">Contrôle routier</Link>
         <Link href="/agent/conducteurs" className="btn">Dossier conducteur / permis</Link>
