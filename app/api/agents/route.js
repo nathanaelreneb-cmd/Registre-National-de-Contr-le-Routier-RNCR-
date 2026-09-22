@@ -27,13 +27,13 @@ export async function POST(request) {
   // Seul un responsable de poste, un responsable régional ou un admin peut ajouter un agent
   const { data: agentDemandeur, error: erreurAgentDemandeur } = await supabaseAdmin
     .from('agents')
-    .select('role, poste_id')
+    .select('role, poste_id, actif')
     .eq('user_id', user.id)
     .single();
 
   const rolesAutorises = ['responsable', 'responsable_regional', 'admin'];
 
-  if (erreurAgentDemandeur || !agentDemandeur || !rolesAutorises.includes(agentDemandeur.role)) {
+  if (erreurAgentDemandeur || !agentDemandeur || !agentDemandeur.actif || !rolesAutorises.includes(agentDemandeur.role)) {
     return Response.json(
       { erreur: "Vous n'avez pas les droits pour ajouter un agent." },
       { status: 403 }
@@ -50,9 +50,24 @@ export async function POST(request) {
   const rolesValides = ['agent', 'responsable', 'responsable_regional'];
   const roleFinal = rolesValides.includes(role) ? role : 'agent';
 
-  // Le poste/la région choisis dans le formulaire priment ; à défaut, on hérite du poste du créateur
-  const posteFinal = posteId || (agentDemandeur.role === 'responsable' ? agentDemandeur.poste_id : null);
+  // Un responsable de poste ne peut créer que des agents rattachés à son propre poste.
+  // La création de responsables est réservée à l'administration.
+  if (agentDemandeur.role === 'responsable' && roleFinal !== 'agent') {
+    return Response.json({ erreur: "Un responsable de poste ne peut créer que des agents." }, { status: 403 });
+  }
+
+  const posteFinal = agentDemandeur.role === 'responsable'
+    ? agentDemandeur.poste_id
+    : (roleFinal === 'responsable_regional' ? null : (posteId || null));
   const regionFinal = roleFinal === 'responsable_regional' ? (regionId || null) : null;
+
+  if (agentDemandeur.role === 'responsable' && !posteFinal) {
+    return Response.json({ erreur: "Votre compte n'est associé à aucun poste." }, { status: 403 });
+  }
+
+  if (agentDemandeur.role === 'responsable_regional' && roleFinal === 'agent' && !posteId) {
+    return Response.json({ erreur: "Le poste de l'agent est obligatoire." }, { status: 400 });
+  }
 
   const { data: nouvelUtilisateur, error: erreurCreation } = await supabaseAdmin.auth.admin.createUser({
     email,
