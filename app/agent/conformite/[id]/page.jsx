@@ -45,7 +45,8 @@ export default function ConformiteEngin({ params }) {
   const [documents, setDocuments] = useState([]);
   const [erreur, setErreur] = useState('');
   const [message, setMessage] = useState('');
-  const [chargement, setChargement] = useState(true);\n  const [televersement, setTeleversement] = useState(false);
+  const [chargement, setChargement] = useState(true);
+  const [televersement, setTeleversement] = useState(false);
 
   const [controle, setControle] = useState({
     date_controle: new Date().toISOString().slice(0, 10),
@@ -143,7 +144,7 @@ export default function ConformiteEngin({ params }) {
     setControles(data || []);
   }
 
-  async function ajouterPreuve(documentId, file) {\n    if (!file) return;\n    setErreur('');\n    setMessage('');\n    const types = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];\n    if (!types.includes(file.type)) { setErreur('Format refusé. Utilisez JPG, PNG, WebP ou PDF.'); return; }\n    if (file.size > 5 * 1024 * 1024) { setErreur('Le fichier ne doit pas dépasser 5 Mo.'); return; }\n    setTeleversement(true);\n    const extension = file.name.split('.').pop()?.toLowerCase() || 'bin';\n    const path = `${id}/${documentId}-${crypto.randomUUID()}.${extension}`;\n    const { error: uploadError } = await supabase.storage.from('engins-conformite').upload(path, file, { upsert: false, contentType: file.type });\n    if (uploadError) { setErreur(uploadError.message); setTeleversement(false); return; }\n    const { error: dbError } = await supabase.from('engins_documents').update({ preuve_url: path, updated_at: new Date().toISOString() }).eq('id', documentId);\n    if (dbError) { await supabase.storage.from('engins-conformite').remove([path]); setErreur(dbError.message); setTeleversement(false); return; }\n    setDocuments((prev) => prev.map((d) => d.id === documentId ? { ...d, preuve_url: path } : d));\n    setMessage('Preuve enregistrée de façon sécurisée.');\n    setTeleversement(false);\n  }\n\n  async function ouvrirPreuve(path) {\n    const { data, error } = await supabase.storage.from('engins-conformite').createSignedUrl(path, 300);\n    if (error) { setErreur(error.message); return; }\n    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');\n  }\n\n  async function ajouterPreuveControle(controleId, file) {
+  async function ajouterPreuve(documentId, file) {
     if (!file) return;
     setErreur('');
     setMessage('');
@@ -152,7 +153,32 @@ export default function ConformiteEngin({ params }) {
     if (file.size > 5 * 1024 * 1024) { setErreur('Le fichier ne doit pas dépasser 5 Mo.'); return; }
     setTeleversement(true);
     const extension = file.name.split('.').pop()?.toLowerCase() || 'bin';
-    const path = \`${id}/controle-${controleId}-${crypto.randomUUID()}.${extension}\`;
+    const path = `${id}/${documentId}-${crypto.randomUUID()}.${extension}`;
+    const { error: uploadError } = await supabase.storage.from('engins-conformite').upload(path, file, { upsert: false, contentType: file.type });
+    if (uploadError) { setErreur(uploadError.message); setTeleversement(false); return; }
+    const { error: dbError } = await supabase.from('engins_documents').update({ preuve_url: path, updated_at: new Date().toISOString() }).eq('id', documentId);
+    if (dbError) { await supabase.storage.from('engins-conformite').remove([path]); setErreur(dbError.message); setTeleversement(false); return; }
+    setDocuments((prev) => prev.map((d) => d.id === documentId ? { ...d, preuve_url: path } : d));
+    setMessage('Preuve enregistrée de façon sécurisée.');
+    setTeleversement(false);
+  }
+
+  async function ouvrirPreuve(path) {
+    const { data, error } = await supabase.storage.from('engins-conformite').createSignedUrl(path, 300);
+    if (error) { setErreur(error.message); return; }
+    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  async function ajouterPreuveControle(controleId, file) {
+    if (!file) return;
+    setErreur('');
+    setMessage('');
+    const types = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!types.includes(file.type)) { setErreur('Format refusé. Utilisez JPG, PNG, WebP ou PDF.'); return; }
+    if (file.size > 5 * 1024 * 1024) { setErreur('Le fichier ne doit pas dépasser 5 Mo.'); return; }
+    setTeleversement(true);
+    const extension = file.name.split('.').pop()?.toLowerCase() || 'bin';
+    const path = `${id}/controle-${controleId}-${crypto.randomUUID()}.${extension}`;
     const { error: uploadError } = await supabase.storage.from('engins-conformite').upload(path, file, { upsert: false, contentType: file.type });
     if (uploadError) { setErreur(uploadError.message); setTeleversement(false); return; }
     const { error: dbError } = await supabase.from('controles_techniques').update({ preuve_url: path }).eq('id', controleId);
@@ -285,7 +311,11 @@ export default function ConformiteEngin({ params }) {
               <span className={`badge ${d.statut === 'valide' ? 'actif' : 'suspect'}`}>{d.statut}</span>
               <div className="meta">{d.numero_document || 'Sans numéro'} • expiration : {dateFR(d.date_expiration)} • {etatExpiration(d.date_expiration)}</div>
               {d.autorite && <div className="meta">Autorité : {d.autorite}</div>}
-              {d.observations && <div className="meta">{d.observations}</div>}\n              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>\n                {d.preuve_url ? <button type="button" className="btn secondaire" onClick={() => ouvrirPreuve(d.preuve_url)}>Voir la preuve (lien 5 min)</button> : null}\n                <label className="btn secondaire" style={{ cursor: televersement ? 'wait' : 'pointer' }}>Ajouter une preuve<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" disabled={televersement} onChange={e => { const file=e.target.files?.[0]; e.target.value=''; ajouterPreuve(d.id,file); }} style={{ display: 'none' }} /></label>\n              </div>
+              {d.observations && <div className="meta">{d.observations}</div>}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                {d.preuve_url ? <button type="button" className="btn secondaire" onClick={() => ouvrirPreuve(d.preuve_url)}>Voir la preuve (lien 5 min)</button> : null}
+                <label className="btn secondaire" style={{ cursor: televersement ? 'wait' : 'pointer' }}>Ajouter une preuve<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" disabled={televersement} onChange={e => { const file=e.target.files?.[0]; e.target.value=''; ajouterPreuve(d.id,file); }} style={{ display: 'none' }} /></label>
+              </div>
             </div>
           ))}
         </section>
