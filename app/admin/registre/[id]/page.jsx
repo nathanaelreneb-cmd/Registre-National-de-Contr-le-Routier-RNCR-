@@ -42,7 +42,7 @@ export default function DetailEnginAdmin({ params }) {
   const [engin, setEngin] = useState(null);
   const [verifications, setVerifications] = useState([]);
   const [signalements, setSignalements] = useState([]);
-  const [transferts, setTransferts] = useState([]);
+  const [transferts, setTransferts] = useState([]);\n  const [controlesTechniques, setControlesTechniques] = useState([]);\n  const [documentsConformite, setDocumentsConformite] = useState([]);
 
   useEffect(() => {
     let actif = true;
@@ -81,7 +81,7 @@ export default function DetailEnginAdmin({ params }) {
     setChargement(true);
     setErreur('');
 
-    const [enginResult, verifResult, signalementResult, transfertResult] = await Promise.all([
+    const [enginResult, verifResult, signalementResult, transfertResult, controleResult, documentResult] = await Promise.all([
       supabase
         .from('engins')
         .select('id, qr_code, type_engin, marque, modele, couleur, plaque, numero_chassis, proprietaire_nom, proprietaire_telephone, proprietaire_cni, proprietaire_citoyen_id, a_un_compte, statut, poste_enregistrement_id, agent_enregistrement_id, created_at, statut_fiscal, assurance_expiration')
@@ -116,7 +116,7 @@ export default function DetailEnginAdmin({ params }) {
 
     setVerifications(verifResult.data || []);
     setSignalements(signalementResult.data || []);
-    setTransferts(transfertResult.data || []);
+    setTransferts(transfertResult.data || []);\n    setControlesTechniques(controleResult.data || []);\n    setDocumentsConformite(documentResult.data || []);
 
     const erreurs = [
       enginResult.error,
