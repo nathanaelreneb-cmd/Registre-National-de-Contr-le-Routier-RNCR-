@@ -11,7 +11,7 @@ const supabaseVerif = createClient(
 );
 
 export async function POST(request) {
-  const token = (request.headers.get('authorization') || '').replace('Bearer ', '');
+  const token = (request.headers.get('authorization') || '').replace(/^Bearer\\s+/i, '').trim();
   if (!token) return Response.json({ erreur: 'Non autorisé.' }, { status: 401 });
 
   const { data: { user }, error: erreurToken } = await supabaseVerif.auth.getUser(token);
@@ -25,7 +25,14 @@ export async function POST(request) {
 
   if (!citoyen) return Response.json({ erreur: 'Profil citoyen introuvable.' }, { status: 403 });
 
-  const { lieu } = await request.json();
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ erreur: 'Requête JSON invalide.' }, { status: 400 });
+  }
+
+  const lieu = typeof body?.lieu === 'string' ? body.lieu.trim().slice(0, 500) : null;
 
   const { error } = await supabaseAdmin.from('alertes_sos').insert({
     citoyen_id: citoyen.id,
