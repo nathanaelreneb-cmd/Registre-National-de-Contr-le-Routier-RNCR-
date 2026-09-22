@@ -23,7 +23,10 @@ export default function AccidentDetail(){
       supabase.from('accident_personnes').select('*').eq('accident_id',id).order('created_at')
     ]);
     if(ac.error||!ac.data){setErreur('Dossier introuvable ou inaccessible.');setChargement(false);return;}
-    setAccident(ac.data);setEngins(eg.data||[]);setPersonnes(pe.data||[]);\n    const paths=Array.isArray(ac.data.photo_urls)?ac.data.photo_urls:[];\n    if(paths.length){ const signed=await Promise.all(paths.map(async path=>{const {data}=await supabase.storage.from('accidents').createSignedUrl(path,300);return data?.signedUrl?{path,url:data.signedUrl}:null;})); setPhotos(signed.filter(Boolean)); }\n    setChargement(false);
+    setAccident(ac.data);setEngins(eg.data||[]);setPersonnes(pe.data||[]);
+    const paths=Array.isArray(ac.data.photo_urls)?ac.data.photo_urls:[];
+    if(paths.length){ const signed=await Promise.all(paths.map(async path=>{const {data}=await supabase.storage.from('accidents').createSignedUrl(path,300);return data?.signedUrl?{path,url:data.signedUrl}:null;})); setPhotos(signed.filter(Boolean)); }
+    setChargement(false);
   })();},[id,router]);
 
   async function chercher(e){e.preventDefault();setErreur('');const q=recherche.trim();if(!q){setResultats([]);return;}
@@ -35,7 +38,24 @@ export default function AccidentDetail(){
   }
   async function ajouterEngin(e){setErreur('');const {data,error}=await supabase.from('accident_engins').insert({accident_id:id,engin_id:e.id,plaque:e.plaque||null,role_dans_accident:'impliqué'}).select('*').single();if(error){setErreur(error.message);return;}setEngins(v=>[...v,data]);setResultats(v=>v.filter(x=>x.id!==e.id));setMessage('Engin ajouté au dossier.');}
   async function ajouterPersonne(e){setErreur('');if(!personne.nom.trim()&&!personne.telephone.trim()){setErreur('Indiquez au moins le nom ou le téléphone.');return;}const payload={accident_id:id,type_personne:personne.type_personne,nom:personne.nom.trim().slice(0,200)||null,telephone:personne.telephone.trim().slice(0,30)||null,blessure:personne.blessure.trim().slice(0,300)||null,evacuee:personne.evacuee,hopital:personne.hopital.trim().slice(0,200)||null};const {data,error}=await supabase.from('accident_personnes').insert(payload).select('*').single();if(error){setErreur(error.message);return;}setPersonnes(v=>[...v,data]);setPersonne({type_personne:'conducteur',nom:'',telephone:'',blessure:'',evacuee:false,hopital:''});setMessage('Personne ajoutée au dossier.');}
-  async function ajouterPhoto(file){\n    if(!file)return; setErreur('');\n    if(file.size>5*1024*1024){setErreur('La photo ne doit pas dépasser 5 Mo.');return;}\n    if(!['image/jpeg','image/png','image/webp'].includes(file.type)){setErreur('Format accepté : JPG, PNG ou WebP.');return;}\n    setUploading(true);\n    const path=id+'/'+crypto.randomUUID()+'.'+(file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg');\n    const {error:up}=await supabase.storage.from('accidents').upload(path,file,{contentType:file.type,upsert:false});\n    if(up){setUploading(false);setErreur(up.message||'Échec du téléversement.');return;}\n    const current=Array.isArray(accident.photo_urls)?accident.photo_urls:[];\n    const next=[...current,path];\n    const {error:db}=await supabase.from('accidents').update({photo_urls:next}).eq('id',id);\n    if(db){await supabase.storage.from('accidents').remove([path]);setUploading(false);setErreur(db.message||'Impossible d’enregistrer la photo.');return;}\n    const {data:signed}=await supabase.storage.from('accidents').createSignedUrl(path,300);\n    setAccident(v=>({...v,photo_urls:next})); if(signed?.signedUrl)setPhotos(v=>[...v,{path,url:signed.signedUrl}]);\n    setUploading(false);setMessage('Photo ajoutée au dossier.');\n  }\n\n  if(chargement)return <div className="shell"><div className="content"><p>Chargement…</p></div></div>;
+  async function ajouterPhoto(file){
+    if(!file)return; setErreur('');
+    if(file.size>5*1024*1024){setErreur('La photo ne doit pas dépasser 5 Mo.');return;}
+    if(!['image/jpeg','image/png','image/webp'].includes(file.type)){setErreur('Format accepté : JPG, PNG ou WebP.');return;}
+    setUploading(true);
+    const path=id+'/'+crypto.randomUUID()+'.'+(file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg');
+    const {error:up}=await supabase.storage.from('accidents').upload(path,file,{contentType:file.type,upsert:false});
+    if(up){setUploading(false);setErreur(up.message||'Échec du téléversement.');return;}
+    const current=Array.isArray(accident.photo_urls)?accident.photo_urls:[];
+    const next=[...current,path];
+    const {error:db}=await supabase.from('accidents').update({photo_urls:next}).eq('id',id);
+    if(db){await supabase.storage.from('accidents').remove([path]);setUploading(false);setErreur(db.message||'Impossible d’enregistrer la photo.');return;}
+    const {data:signed}=await supabase.storage.from('accidents').createSignedUrl(path,300);
+    setAccident(v=>({...v,photo_urls:next})); if(signed?.signedUrl)setPhotos(v=>[...v,{path,url:signed.signedUrl}]);
+    setUploading(false);setMessage('Photo ajoutée au dossier.');
+  }
+
+  if(chargement)return <div className="shell"><div className="content"><p>Chargement…</p></div></div>;
   if(!accident)return <div className="shell"><div className="content"><div className="erreur">{erreur}</div></div></div>;
   return <div className="shell"><div className="header"><Link href="/agent/historique-accidents" style={{color:'var(--brand)'}}>← Historique</Link><p className="sigle">Dossier accident</p><h1>{accident.numero_dossier}</h1><p style={{color:'var(--ink-soft)'}}>{new Date(accident.date_heure).toLocaleString('fr-FR')} — {accident.lieu}</p></div>
   <div className="content">{erreur&&<div className="erreur">{erreur}</div>}{message&&<div className="resultat-statut actif"><p className="grand-label">{message}</p></div>}
