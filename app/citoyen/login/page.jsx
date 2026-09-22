@@ -17,19 +17,30 @@ export default function ConnexionCitoyen() {
     setErreur('');
     setChargement(true);
 
-    const { data: connexion, error } = await supabase.auth.signInWithPassword({ email, password: motDePasse });
+    const { data: connexion, error: authError } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password: motDePasse,
+    });
 
-    if (error) {
+    if (authError || !connexion.user) {
       setChargement(false);
       setErreur("Identifiants incorrects. Vérifiez l'email et le mot de passe.");
       return;
     }
 
-    const { data: agent } = await supabase
+    const { data: agent, error: agentError } = await supabase
       .from('agents')
       .select('id')
       .eq('user_id', connexion.user.id)
       .maybeSingle();
+
+    if (agentError) {
+      console.error('Erreur vérification rôle citoyen:', agentError);
+      await supabase.auth.signOut();
+      setChargement(false);
+      setErreur("Impossible de vérifier le type de compte. Réessayez.");
+      return;
+    }
 
     setChargement(false);
 
@@ -55,11 +66,11 @@ export default function ConnexionCitoyen() {
         <form onSubmit={seConnecter}>
           <div className="field">
             <label htmlFor="email">Adresse email</label>
-            <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div className="field">
             <label htmlFor="mdp">Mot de passe</label>
-            <input id="mdp" type="password" required value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} />
+            <input id="mdp" type="password" autoComplete="current-password" required value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} />
           </div>
           <button type="submit" className="btn" disabled={chargement}>
             {chargement ? 'Connexion en cours…' : 'Se connecter'}
