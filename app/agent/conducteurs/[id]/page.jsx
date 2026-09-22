@@ -32,7 +32,18 @@ export default function DossierConducteur({ params }) {
 
   useEffect(()=>{(async()=>{const {data}=await supabase.auth.getSession(); if(!data.session)return router.push('/agent/login'); const {data:a}=await supabase.from('agents').select('role,actif').eq('user_id',data.session.user.id).maybeSingle(); if(!a?.actif || !['agent','responsable','responsable_regional','admin'].includes(a.role))return router.push('/agent/login'); setAutorise(true); await charger();})();},[id]);
 
-  async function rechercherEngins(e){\n    e?.preventDefault(); const t=enginRecherche.trim().slice(0,60); if(!t)return;\n    const [p,c,q]=await Promise.all([supabase.from('engins').select('id,plaque,numero_chassis,type_engin,marque,modele').ilike('plaque',\`%${t}%\`).limit(20),supabase.from('engins').select('id,plaque,numero_chassis,type_engin,marque,modele').ilike('numero_chassis',\`%${t}%\`).limit(20),supabase.from('engins').select('id,plaque,numero_chassis,type_engin,marque,modele').ilike('qr_code',\`%${t}%\`).limit(20)]);\n    const m=new Map(); [p.data,c.data,q.data].flat().filter(Boolean).forEach(x=>m.set(x.id,x)); setEnginsTrouves([...m.values()]);\n  }\n\n  async function associerEngin(enginId){\n    setAssociation(true); setErreur(''); const {error}=await supabase.from('conducteur_engins').insert({conducteur_id:id,engin_id:enginId,est_principal:engins.length===0});\n    setAssociation(false); if(error && error.code!=='23505'){setErreur('Impossible d’associer cet engin au conducteur.');return;} await charger(); setEnginsTrouves([]); setEnginRecherche('');\n  }\n\n  async function ajouterPermis(e){
+  async function rechercherEngins(e){
+    e?.preventDefault(); const t=enginRecherche.trim().slice(0,60); if(!t)return;
+    const [p,c,q]=await Promise.all([supabase.from('engins').select('id,plaque,numero_chassis,type_engin,marque,modele').ilike('plaque',`%${t}%`).limit(20),supabase.from('engins').select('id,plaque,numero_chassis,type_engin,marque,modele').ilike('numero_chassis',`%${t}%`).limit(20),supabase.from('engins').select('id,plaque,numero_chassis,type_engin,marque,modele').ilike('qr_code',`%${t}%`).limit(20)]);
+    const m=new Map(); [p.data,c.data,q.data].flat().filter(Boolean).forEach(x=>m.set(x.id,x)); setEnginsTrouves([...m.values()]);
+  }
+
+  async function associerEngin(enginId){
+    setAssociation(true); setErreur(''); const {error}=await supabase.from('conducteur_engins').insert({conducteur_id:id,engin_id:enginId,est_principal:engins.length===0});
+    setAssociation(false); if(error && error.code!=='23505'){setErreur('Impossible d’associer cet engin au conducteur.');return;} await charger(); setEnginsTrouves([]); setEnginRecherche('');
+  }
+
+  async function ajouterPermis(e){
     e.preventDefault(); setErreur('');
     if(!form.numero_permis.trim()) return setErreur('Le numéro du permis est obligatoire.');
     setSaving(true);
